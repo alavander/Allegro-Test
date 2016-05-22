@@ -9,6 +9,7 @@ private:
 	int ID;
 	bool alive;
 	bool movable;
+	bool solid;
 
 protected:
 	float x;
@@ -17,7 +18,6 @@ protected:
 	float velY;
 	int dirX;
 	int dirY;
-	int object_type;
 
 	//int maxFrame;
 	//int curFrame;
@@ -32,42 +32,39 @@ protected:
 
 public:
 	GameObject();
+	/* */
 	void virtual Destroy();
-
-	void Init(float x, float y, float velX, int dirX, float VelY, int dirY);
 	void virtual Update();
 	void virtual Render();
-
-	//Creature Methods
-	int virtual CheckAttack();
-	void virtual GotHit(int dam);
-
+    /* */
+    void virtual GotHit(int dam);
+    int virtual CheckAttack();
+	/* */
+	void Init(float x, float y, float velX, int dirX, float VelY, int dirY);
+	/* */
 	float GetX() {return x;}
 	float GetY() {return y;}
 	float GetDX() {return dirX;}
 	float GetVX() {return velX;}
 	float GetDY() {return dirY;}
 	float GetVY() {return velY;}
-
+	/* */
 	void SetX(float x) {GameObject::x = x;}
 	void SetY(float y) {GameObject::y = y;}
 	void SetVX(float velX) {GameObject::velX = velX;}
 	void SetDX(float dirX) {GameObject::dirX = dirX;}
 	void SetVY(float velY) {GameObject::velY = velY;}
 	void SetDY(float dirY) {GameObject::dirY = dirY;}
-
-	void SetImage(ALLEGRO_BITMAP *image) {GameObject::image = image;}
-
+	/* */
 	int GetID() {return ID;}
-	void SetID(int ID) {GameObject::ID = ID;}
-
-	int GetType() {return object_type;}
-
 	bool GetAlive() {return alive;}
-	void SetAlive(bool alive) {GameObject::alive = alive;}
-
+	bool GetSolid() {return solid;}
 	bool CanMove() {return movable;}
+	bool CollisionCheck(GameObject *otherObject);
+	/* */
+	void SetID(int ID) {GameObject::ID = ID;}
+	void SetAlive(bool alive) {GameObject::alive = alive;}
+	void SetSolid(bool solid) {GameObject::solid = solid;}
 	void SetMove(bool movable) {GameObject::movable = movable;}
-
-	bool ObstacleCheck(GameObject *otherObject);
+	void SetImage(ALLEGRO_BITMAP *image) {GameObject::image = image;}
 };

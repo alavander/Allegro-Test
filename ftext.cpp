@@ -1,11 +1,14 @@
 #include "ftext.h"
 
 
-Ftext::Ftext(float x, float y, float velX, float velY, int display, ALLEGRO_FONT *font)
+Ftext::Ftext(float x, float y, float velY, int display, ALLEGRO_FONT *font)
 {
-    GameObject::Init(x, y, velX, 0, velY, -1);
+    GameObject::Init(x, y, 0, 0, velY, -1);
 	Ftext::display = display;
 	Ftext::font = font;
+	Ftext::duration = 0;
+	GameObject::SetID(MISC);
+	GameObject::SetSolid(false);
 }
 
 void Ftext::Destroy()
@@ -19,6 +22,9 @@ void Ftext::Update()
 
 	if(y < 0 || y > 400)
 		SetAlive(false);
+
+    duration++;
+    if (duration > 90) SetAlive(false);
 }
 
 void Ftext::Render()

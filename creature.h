@@ -5,7 +5,7 @@
 class Creature : public GameObject
 {
 private:
-    int damage, hp, attack_cooldown;
+    int damage, hp, attack_cooldown, gold_bounty;
 
 protected:
 
@@ -18,8 +18,8 @@ public:
 	void Render();
 
     //GameObject inherted functions
-	int CheckAttack();
     void GotHit(int dam);
+    int CheckAttack();
 
     //Attack functions
     int GetCooldown() {return attack_cooldown;}

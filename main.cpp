@@ -2,6 +2,7 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+#include <allegro5/allegro_primitives.h>
 #include <list>
 /* Local Includes */
 #include "objects.h"
@@ -9,18 +10,17 @@
 #include "Const.h"
 #include "ftext.h"
 
-
 /*
 Prototype-level ToDo:
-- Implement Lives System
-- Implement Resources, Population Limit
-- Resources generation
+- Implement Lives System -> Pointer na funkcje?
+- Implement Resources(50%), Population Limit(?)
+- Resources generation(50%)
 - Animations (moving, standing, attacking, dying)
 - Main Menu
 - Writing/Loading from files
 - Sounds and music
-- Floating Text (damage)
-- Different Stats for Creatures
+- Different Stats for Creatures -> wczytywanie z plików? hard-coded?
+- Prevent Spawning Creatures on top of each other
 */
 //==============================================
 //GLOBALS
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
     bool done = false;
     bool render = false;
     int row_selected = 1;
+    float gold = 100;
 
 //==============================================
 //PROJECT VARIABLES
@@ -77,6 +78,7 @@ int main(int argc, char **argv)
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
+    al_init_primitives_addon();
 
 //==============================================
 //PROJECT INIT
@@ -128,10 +130,11 @@ int main(int argc, char **argv)
                 if (row_selected < 3 ) row_selected += 1;
 				break;
             case ALLEGRO_KEY_SPACE:
-                    if (STATE == PLAYING)
+                    if (STATE == PLAYING && gold > 10)
                     {
 					Creature *dwarf = new Creature( 20, row_selected, 2, 1, PLAYER, dwarfImage);
 					objects.push_back(dwarf);
+					gold -= 10;
                     }
                 break;
 			}
@@ -145,25 +148,30 @@ int main(int argc, char **argv)
 			//=====================
 
                 /*Goblin Spawning*/
-				if(STATE == PLAYING && rand() % 100 == 0)
+				if(STATE == PLAYING && rand() % 135 == 0)
 				{
                 	Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, 3, -1, ENEMY, goblinImage);
 					objects.push_back(goblin);
 				}
 
+				/*Gold Generation*/
+				if(STATE == PLAYING)
+				gold += 0.06;
+
                 /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
                 objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
 
-                /*Update & Checking Range*/
+                /*Collision Checking*/
                 if ( STATE == PLAYING)
 				for(iter = objects.begin(); iter != objects.end(); ++iter)
                 {
-                    if ( !(*iter)->GetAlive()) continue;
+                    if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
 
 					for(iter2 = objects.begin(); iter2 != objects.end(); ++iter2)
                     {
-						if( !(*iter2)->GetAlive() || (*iter2) == (*iter))  continue;
-						if((*iter)->ObstacleCheck((*iter2)))
+						if( !(*iter2)->GetAlive() || (*iter2) == (*iter) || !(*iter2)->GetSolid())  continue;
+
+						if((*iter)->CollisionCheck((*iter2)))
                         {
                             ((*iter)->SetMove(false));
 
@@ -174,15 +182,23 @@ int main(int argc, char **argv)
                                     if (damage > 0 )
                                     {
                                     (*iter2)->GotHit(damage);
-                                    //Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 1, 1, 12345, font18);
-                                    //objects.push_back(text);
+                                    Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 0.5, damage, font18);
+                                    objects.push_back(text);
                                     }
                                 }
                         }
                     }
-                    if((*iter)->CanMove()) (*iter)->Update();
-                    else ((*iter)->SetMove(true));
                 };
+            //Updating (move + ToDo statuses)
+                if( STATE == PLAYING)
+                for(iter = objects.begin(); iter != objects.end(); ++iter)
+                {
+                     if ( !(*iter)->GetAlive()) continue;
+                     {
+                        if((*iter)->CanMove()) (*iter)->Update();
+                        else ((*iter)->SetMove(true));
+                     }
+                }
 
 			//cull the dead
 			for(iter = objects.begin(); iter != objects.end(); )
@@ -211,8 +227,11 @@ int main(int argc, char **argv)
               }
               if (STATE == PAUSED)
               al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
-
+            /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 146+row_selected*15, 0);
+            /* Gold */
+              al_draw_textf(font18, al_map_rgb(240, 180, 0), 120, 320, 0, "Gold: %i", (int)gold);
+
 
 			//FLIP BUFFERS========================
 			al_flip_display();

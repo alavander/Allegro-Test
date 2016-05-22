@@ -12,7 +12,7 @@ class Ftext : public GameObject
         ALLEGRO_FONT *font;
 
     public:
-        Ftext(float x, float y, float velX, float velY, int display, ALLEGRO_FONT *font);
+        Ftext(float x, float y, float velY, int display, ALLEGRO_FONT *font);
         void Destroy();
         void Update();
         void Render();

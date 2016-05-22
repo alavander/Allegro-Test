@@ -21,6 +21,7 @@ GameObject::GameObject()
 	image = NULL;
 	alive = true;
 	movable = true;
+	solid = true;
 }
 
 void GameObject::Destroy()
@@ -47,16 +48,15 @@ void GameObject::Render()
 {
 }
 
-int GameObject::CheckAttack()
-{
-}
-
 void GameObject::GotHit(int dam)
 {
 }
 
+int GameObject::CheckAttack()
+{
+}
 
-bool GameObject::ObstacleCheck(GameObject *otherObject)
+bool GameObject::CollisionCheck(GameObject *otherObject)
 {
 	float oX = otherObject->GetX();
 	float oY = otherObject->GetY();

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Allegro Test" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Allegro Test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add directory="D:/Programowanie/Allegro/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-static-libgcc" />
+					<Add option="-static-libstdc++" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_physfs-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_ttf-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_primitives-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_dialog-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_memfile-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_image-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_font-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_color-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_acodec-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro_audio-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/liballegro-5.0.10-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libdumb-0.9.3-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libFLAC-1.2.1-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libfreetype-2.4.8-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libogg-1.2.1-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libvorbisfile-1.3.2-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libvorbis-1.3.2-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libopenal-1.14-static-mt.a" />
+					<Add library="D:/Programowanie/Allegro/lib/libzlib-1.2.5-static-mt.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libgdiplus.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libuuid.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libkernel32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libwinmm.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libpsapi.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libopengl32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libglu32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libuser32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libcomdlg32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libgdi32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libshell32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libole32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libadvapi32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libws2_32.a" />
+					<Add library="D:/Programowanie/MinGW/lib/libshlwapi.a" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Allegro Test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="Const.h" />
+		<Unit filename="creature.cpp" />
+		<Unit filename="creature.h" />
+		<Unit filename="ftext.cpp" />
+		<Unit filename="ftext.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="objects.cpp" />
+		<Unit filename="objects.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
