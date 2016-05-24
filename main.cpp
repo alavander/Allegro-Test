@@ -13,9 +13,9 @@
 /*
 Prototype-level ToDo:
 - Implement Lives System -> Pointer na funkcje?
-- Implement Resources(50%), Population Limit(?)
+- Implement Resources(50%)
 - Resources generation(50%)
-- Animations (moving, standing, attacking, dying)
+- Animations (moving(50%), standing, attacking, dying)->requires freaking sprite sheets
 - Main Menu
 - Writing/Loading from files
 - Sounds and music
@@ -50,6 +50,7 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
+	ALLEGRO_BITMAP *goldIcon = NULL;
 
 //==============================================
 //ALLEGRO VARIABLES
@@ -84,15 +85,19 @@ int main(int argc, char **argv)
 //PROJECT INIT
 //==============================================
 	font18 = al_load_font("dwarf.ttf", 20, 0);
+    /*GUI*/
 	bgImage = al_load_bitmap("background.png");
 	uiImage = al_load_bitmap("background2.jpg");
+	goldIcon = al_load_bitmap("gold.png");
+
+	/*Jednostki*/
 	dwarfImage = al_load_bitmap("dwarf_warrior.png");
 	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
-	goblinImage = al_load_bitmap("goblin.png");
-	al_convert_mask_to_alpha(goblinImage, al_map_rgb(255,255,255));
+	goblinImage = al_load_bitmap("goblin_move.png");
+	al_convert_mask_to_alpha(goblinImage, al_map_rgb(0,0,248));
 	hand = al_load_bitmap("hand.png");
 	al_convert_mask_to_alpha(hand, al_map_rgb(255,0,0));
-
+    /*Timer*/
 	srand(time(NULL));
 	//==============================================
 	//TIMER INIT AND STARTUP
@@ -147,47 +152,43 @@ int main(int argc, char **argv)
 			render = true;
 			//=====================
 
-                /*Goblin Spawning*/
-				if(STATE == PLAYING && rand() % 135 == 0)
-				{
-                	Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, 3, -1, ENEMY, goblinImage);
-					objects.push_back(goblin);
-				}
+            /*Goblin Spawning*/
+            if(STATE == PLAYING && rand() % 115 == 0)
+            {
+                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, 3, -1, ENEMY, goblinImage);
+                objects.push_back(goblin);
+            }
 
-				/*Gold Generation*/
-				if(STATE == PLAYING)
-				gold += 0.06;
+            /*Gold Generation*/
+            if(STATE == PLAYING)
+            gold += 0.06;
 
-                /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
-                objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
+            /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
+            objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
 
-                /*Collision Checking*/
-                if ( STATE == PLAYING)
-				for(iter = objects.begin(); iter != objects.end(); ++iter)
+            /*Collision Checking*/
+            if ( STATE == PLAYING)
+            for(iter = objects.begin(); iter != objects.end(); ++iter)
+            {
+                if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
+                for(iter2 = objects.begin(); iter2 != objects.end(); ++iter2)
                 {
-                    if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
-
-					for(iter2 = objects.begin(); iter2 != objects.end(); ++iter2)
+                    if( !(*iter2)->GetAlive() || (*iter2) == (*iter) || !(*iter2)->GetSolid())  continue;
+                    if((*iter)->CollisionCheck((*iter2)))
                     {
-						if( !(*iter2)->GetAlive() || (*iter2) == (*iter) || !(*iter2)->GetSolid())  continue;
-
-						if((*iter)->CollisionCheck((*iter2)))
-                        {
-                            ((*iter)->SetMove(false));
-
-                                if(((*iter)-> GetID() == PLAYER && (*iter2)->GetID() == ENEMY) ||
-                                ((*iter)-> GetID() == ENEMY && (*iter2)->GetID() == PLAYER));
+                        ((*iter)->SetMove(false));
+                        if((*iter)->IsInRange((*iter2), 60) && (*iter)->IsOppositeTeam((*iter2)))
+                            {
+                                int damage = (*iter)->CheckAttack();
+                                if (damage > 0 )
                                 {
-                                    int damage = (*iter)->CheckAttack();
-                                    if (damage > 0 )
-                                    {
-                                    (*iter2)->GotHit(damage);
-                                    Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 0.5, damage, font18);
-                                    objects.push_back(text);
-                                    }
+                                (*iter2)->GotHit(damage);
+                                Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 0.7, damage, font18);
+                                objects.push_back(text);
                                 }
-                        }
+                            }
                     }
+                }
                 };
             //Updating (move + ToDo statuses)
                 if( STATE == PLAYING)
@@ -220,6 +221,7 @@ int main(int argc, char **argv)
 			render = false;
             al_draw_bitmap(bgImage, 0, 0, 0);
             al_draw_bitmap(uiImage, 0, 240, 0);
+            al_draw_bitmap(goldIcon, 80, 310, 0);
 			//BEGIN PROJECT RENDER===============
             for(iter = objects.begin(); iter != objects.end(); ++iter)
               {
@@ -230,7 +232,7 @@ int main(int argc, char **argv)
             /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 146+row_selected*15, 0);
             /* Gold */
-              al_draw_textf(font18, al_map_rgb(240, 180, 0), 120, 320, 0, "Gold: %i", (int)gold);
+              al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "%i", (int)gold);
 
 
 			//FLIP BUFFERS========================
@@ -254,6 +256,7 @@ int main(int argc, char **argv)
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
+	al_destroy_bitmap(goldIcon);
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);

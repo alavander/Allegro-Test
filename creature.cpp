@@ -19,6 +19,13 @@ Creature::Creature(float x, float y, float velX, int dirX, int ID, ALLEGRO_BITMA
 	//frameHeight = 0;
 	//animationColumns = 0;
 	Creature::image = image;
+	maxFrame = 8;//Dla goblina
+	curFrame = 0;
+	frameCount = 0;
+	frameDelay = 5;
+	frameWidth = 64;
+	frameHeight = 52;
+	animationColumns = 8;
 }
 
 void Creature::Destroy()
@@ -30,16 +37,13 @@ void Creature::Update()
 {
 	GameObject::Update();
 
-	/*if(++frameCount >= frameDelay)
+	if(++frameCount >= frameDelay)
 	{
-		curFrame += animationDirection;
+		curFrame++;
 		if(curFrame >= maxFrame)
 			curFrame = 0;
-		else if(curFrame <= 0)
-			curFrame = maxFrame;
-
 		frameCount = 0;
-	}*/
+	}
 
 	if(x < 0 || x > 800)
 		SetAlive(false);
@@ -49,10 +53,15 @@ void Creature::Render()
 {
 	GameObject::Render();
 
-	//int fx = (curFrame % animationColumns) * frameWidth;
-	//int fy = (curFrame / animationColumns) * frameHeight;
 	if (GetID() == ENEMY) al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(225,0,0), 1);
 	else al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(0,225,0), 1);
+
+    if (GetID() == ENEMY)
+    {
+	al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
+		x - frameWidth / 2, 116+y*15, 0);
+    }
+    else
     al_draw_bitmap(image, x-32,106+y*15, 0 );
 }
 
@@ -65,8 +74,8 @@ void Creature::Render()
         }
         else
         {
-        SetCooldown(40);
-        return rand()%4 + 8;
+        SetCooldown(60+rand()%20);
+        return rand()%4 + 9;
         }
 	}
 

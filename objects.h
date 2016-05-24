@@ -19,14 +19,14 @@ protected:
 	int dirX;
 	int dirY;
 
-	//int maxFrame;
-	//int curFrame;
-	//int frameCount;
-	//int frameDelay;
-	//int frameWidth;
-	//int frameHeight;
-	//int animationColumns;
-	//int animationDirection;
+	int maxFrame;
+	int curFrame;
+	int frameCount;
+	int frameDelay;
+	int frameWidth;
+	int frameHeight;
+	int animationColumns;
+	int animationDirection;
 
 	ALLEGRO_BITMAP *image;
 
@@ -36,7 +36,8 @@ public:
 	void virtual Destroy();
 	void virtual Update();
 	void virtual Render();
-    /* */
+
+    /* Wyrzuciæ jako wspólny interface - combat? */
     void virtual GotHit(int dam);
     int virtual CheckAttack();
 	/* */
@@ -60,7 +61,12 @@ public:
 	bool GetAlive() {return alive;}
 	bool GetSolid() {return solid;}
 	bool CanMove() {return movable;}
+
+	/* Wyrzuciæ jako wspólny interface - Range/Collisions? */
 	bool CollisionCheck(GameObject *otherObject);
+	bool IsInRange(GameObject *otherObject, float attack_range);
+	bool IsOppositeTeam(GameObject *otherObject);
+
 	/* */
 	void SetID(int ID) {GameObject::ID = ID;}
 	void SetAlive(bool alive) {GameObject::alive = alive;}

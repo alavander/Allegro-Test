@@ -9,14 +9,14 @@ GameObject::GameObject()
 	velY = 0;
 	dirY = 0;
 
-	//maxFrame = 0;
-	//curFrame = 0;
-	//frameCount = 0;
-	//frameDelay = 0;
-	//frameWidth = 0;
-	//frameHeight = 0;
-	//animationColumns = 0;
-	//animationDirection = 0;
+	maxFrame = 0;
+	curFrame = 0;
+	frameCount = 0;
+	frameDelay = 0;
+	frameWidth = 0;
+	frameHeight = 0;
+	animationColumns = 0;
+	animationDirection = 0;
 
 	image = NULL;
 	alive = true;
@@ -45,15 +45,15 @@ void GameObject::Update()
 }
 
 void GameObject::Render()
-{
+{ //virtual
 }
 
 void GameObject::GotHit(int dam)
-{
+{ //virtual
 }
 
 int GameObject::CheckAttack()
-{
+{ //virtual
 }
 
 bool GameObject::CollisionCheck(GameObject *otherObject)
@@ -67,4 +67,21 @@ bool GameObject::CollisionCheck(GameObject *otherObject)
 		return false;
 }
 
+	bool GameObject::IsInRange(GameObject *otherObject, float attack_range)
+{
+	float oX = otherObject->GetX();
+	float oY = otherObject->GetY();
 
+	if( x < oX && x + attack_range > oX && y == oY && GetID() == PLAYER ) return true;
+    else if (x > oX && x - attack_range < oX && y == oY && GetID() == ENEMY) return true;
+	else
+		return false;
+}
+
+
+	bool GameObject::IsOppositeTeam(GameObject *otherObject)
+{
+    if ( GetID() == PLAYER && otherObject->GetID() == ENEMY) return true;
+    else if ( GetID() == ENEMY && otherObject->GetID() == PLAYER) return true;
+    else return false;
+}
