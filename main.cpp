@@ -4,6 +4,7 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 #include <list>
+#include <iostream>
 /* Local Includes */
 #include "objects.h"
 #include "creature.h"
@@ -16,10 +17,8 @@ Prototype-level ToDo:
 - Implement Resources(50%)
 - Resources generation(50%)
 - Animations (moving(50%), standing, attacking, dying)->requires freaking sprite sheets
-- Main Menu
 - Writing/Loading from files
 - Sounds and music
-- Different Stats for Creatures -> wczytywanie z plików? hard-coded?
 - Prevent Spawning Creatures on top of each other
 */
 //==============================================
@@ -29,7 +28,7 @@ Prototype-level ToDo:
 std::list<GameObject *> objects;
 std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
-int STATE = PLAYING;
+int STATE = MENU;
 
 int main(int argc, char **argv)
 {
@@ -39,7 +38,20 @@ int main(int argc, char **argv)
     bool done = false;
     bool render = false;
     int row_selected = 1;
+    int unit_selected = 1;
     float gold = 100;
+
+//Unit Stats
+                           //dam hp speed gold cost/spawn chance
+//The Bad
+float goblin_stat[]         ={8, 18, 4, 0, 3};
+float goblin_war_stat[]     ={13,25, 3, 12, 3};
+float troll_stat[]          ={25,84, 1, 3, 3};
+//The Good
+float dwarf_stat[]          ={12,35,1.8,10, 0};
+float dwarf_berserker_stat[]={21,20,2.5,25, 1};
+float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
+
 
 //==============================================
 //PROJECT VARIABLES
@@ -51,6 +63,7 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
 	ALLEGRO_BITMAP *goldIcon = NULL;
+	ALLEGRO_BITMAP *titleScreen = NULL;
 
 //==============================================
 //ALLEGRO VARIABLES
@@ -89,10 +102,12 @@ int main(int argc, char **argv)
 	bgImage = al_load_bitmap("background.png");
 	uiImage = al_load_bitmap("background2.jpg");
 	goldIcon = al_load_bitmap("gold.png");
+	titleScreen = al_load_bitmap("title_screen.png");
 
 	/*Jednostki*/
 	dwarfImage = al_load_bitmap("dwarf_warrior.png");
 	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
+
 	goblinImage = al_load_bitmap("goblin_move.png");
 	al_convert_mask_to_alpha(goblinImage, al_map_rgb(0,0,248));
 	hand = al_load_bitmap("hand.png");
@@ -134,15 +149,45 @@ int main(int argc, char **argv)
 			case ALLEGRO_KEY_DOWN:
                 if (row_selected < 3 ) row_selected += 1;
 				break;
-            case ALLEGRO_KEY_SPACE:
-                    if (STATE == PLAYING && gold > 10)
-                    {
-					Creature *dwarf = new Creature( 20, row_selected, 2, 1, PLAYER, dwarfImage);
-					objects.push_back(dwarf);
-					gold -= 10;
-                    }
+            case ALLEGRO_KEY_LEFT:
+                if (unit_selected > 1) unit_selected -= 1;
                 break;
-			}
+            case ALLEGRO_KEY_RIGHT:
+                if (unit_selected < 3) unit_selected += 1;
+                break;
+            case ALLEGRO_KEY_SPACE:
+                    if (STATE == MENU) STATE = PLAYING;
+                    else if (STATE == PLAYING)
+                    {
+                        if (unit_selected == 1 && gold > dwarf_stat[3])
+                            {
+                                Creature *dwarf = new Creature( 20, row_selected, dwarf_stat, 1, PLAYER, dwarfImage);
+                                objects.push_back(dwarf);
+                                gold -= dwarf_stat[3];
+                                Ftext *text = new Ftext(230, 325, -0.5, -10, 45, font18);
+                                objects.push_back(text);
+                                break;
+                            }
+                        if (unit_selected == 2 && gold > dwarf_berserker_stat[3])
+                            {
+                                Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, dwarfImage);
+                                objects.push_back(dwarf);
+                                gold -= dwarf_berserker_stat[3];
+                                Ftext *text = new Ftext(230, 325, -0.5, -25, 45, font18);
+                                objects.push_back(text);
+                                break;
+                            }
+                        if (unit_selected == 3 && gold > dwarf_lord_stat[3])
+                            {
+                                Creature *dwarf = new Creature( 20, row_selected, dwarf_lord_stat, 1, PLAYER, dwarfImage);
+                                objects.push_back(dwarf);
+                                gold -= dwarf_lord_stat[3];
+                                Ftext *text = new Ftext(230, 325, -0.5, -40, 45, font18);
+                                objects.push_back(text);
+                                break;
+                            }
+                    }
+		}
 		}
 		//==============================================
 		//GAME UPDATE
@@ -155,13 +200,13 @@ int main(int argc, char **argv)
             /*Goblin Spawning*/
             if(STATE == PLAYING && rand() % 115 == 0)
             {
-                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, 3, -1, ENEMY, goblinImage);
+                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, goblin_stat, -1, ENEMY, goblinImage);
                 objects.push_back(goblin);
             }
 
             /*Gold Generation*/
             if(STATE == PLAYING)
-            gold += 0.06;
+            gold += 0.04;
 
             /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
             objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
@@ -183,13 +228,13 @@ int main(int argc, char **argv)
                                 if (damage > 0 )
                                 {
                                 (*iter2)->GotHit(damage);
-                                Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 0.7, damage, font18);
+                                Ftext *text = new Ftext(((*iter2)->GetX()-5+rand()%10), 100+((*iter2)->GetY())*15, 0.7, damage, 45, font18);
                                 objects.push_back(text);
                                 }
                             }
                     }
                 }
-                };
+            };
             //Updating (move + ToDo statuses)
                 if( STATE == PLAYING)
                 for(iter = objects.begin(); iter != objects.end(); ++iter)
@@ -219,6 +264,13 @@ int main(int argc, char **argv)
 		if(render && al_is_event_queue_empty(event_queue))
 		{
 			render = false;
+			if (STATE == MENU)
+            {
+            al_draw_bitmap(titleScreen, 0, 0, 0);
+            al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 350, ALLEGRO_ALIGN_CENTRE , "Press spacebar to start");
+            }
+			if (STATE == PLAYING || STATE == PAUSED)
+            {
             al_draw_bitmap(bgImage, 0, 0, 0);
             al_draw_bitmap(uiImage, 0, 240, 0);
             al_draw_bitmap(goldIcon, 80, 310, 0);
@@ -234,6 +286,12 @@ int main(int argc, char **argv)
             /* Gold */
               al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "%i", (int)gold);
 
+            al_draw_bitmap(dwarfImage, 490,320, 0 );
+            al_draw_tinted_bitmap(dwarfImage, al_map_rgb(180, 100, 100), 580, 320, 0);
+            al_draw_tinted_bitmap(dwarfImage, al_map_rgb(100, 200, 100), 660, 320, 0);
+
+            al_draw_rectangle(404+unit_selected*90,325,463+unit_selected*90,383, al_map_rgb(255, 240, 0), 1);
+            }
 
 			//FLIP BUFFERS========================
 			al_flip_display();
@@ -257,6 +315,7 @@ int main(int argc, char **argv)
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
 	al_destroy_bitmap(goldIcon);
+	al_destroy_bitmap(titleScreen);
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);

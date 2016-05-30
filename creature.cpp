@@ -1,31 +1,22 @@
 #include "creature.h"
 #include <allegro5/allegro_primitives.h>
 
-Creature::Creature(float x, float y, float velX, int dirX, int ID, ALLEGRO_BITMAP *image)
+Creature::Creature(float x, float y, float stats[], int dirX, int ID, ALLEGRO_BITMAP *image)
 {
-	GameObject::Init(x, y, velX, dirX, 0, 0);
+	GameObject::Init(x, y, stats[2], dirX, 0, 0);
 	GameObject::SetID(ID);
-	GameObject::SetDY(0);
-	GameObject::SetVY(0);
-    Creature::damage = 10;
-    Creature::hp = 30;
+    Creature::damage = stats[0];
+    Creature::hp = stats[1];
     Creature::attack_cooldown = 0;
-    gold_bounty = 5;
-	//maxFrame = 0;
-	//curFrame = 0;
-	//frameCount = 0;
-	//frameDelay = 0;
-	//frameWidth = 0;
-	//frameHeight = 0;
-	//animationColumns = 0;
 	Creature::image = image;
-	maxFrame = 8;//Dla goblina
-	curFrame = 0;
-	frameCount = 0;
-	frameDelay = 5;
-	frameWidth = 64;
-	frameHeight = 52;
-	animationColumns = 8;
+	Creature::maxFrame = 8;//Dla goblina
+	Creature::curFrame = 0;
+	Creature::frameCount = 0;
+	Creature::frameDelay = 5;
+	Creature::frameWidth = 64;
+	Creature::frameHeight = 52;
+	Creature::animationColumns = 8;
+	Creature::UNIT_TYPE = stats[4];
 }
 
 void Creature::Destroy()
@@ -53,16 +44,28 @@ void Creature::Render()
 {
 	GameObject::Render();
 
-	if (GetID() == ENEMY) al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(225,0,0), 1);
-	else al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(0,225,0), 1);
-
     if (GetID() == ENEMY)
     {
+    al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(225,0,0), 1);//Red Circle for Enemies
 	al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
 		x - frameWidth / 2, 116+y*15, 0);
     }
     else
-    al_draw_bitmap(image, x-32,106+y*15, 0 );
+    {
+        al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
+            switch(GetType())//Drawing different color based on unit type.
+            {
+            case BERSERKER:
+                al_draw_tinted_bitmap(image, al_map_rgb(180, 100, 100),x-32,106+y*15, 0);
+                break;
+            case LORD:
+                al_draw_tinted_bitmap(image, al_map_rgb(100, 200, 100),x-32,106+y*15, 0);
+                break;
+            case DWARF:
+                al_draw_bitmap(image, x-32,106+y*15, 0 );
+                break;
+            }
+    }
 }
 
 	int Creature::CheckAttack()
@@ -75,15 +78,14 @@ void Creature::Render()
         else
         {
         SetCooldown(60+rand()%20);
-        return rand()%4 + 9;
+        return GetAttackValue()/2 + rand() % GetAttackValue()/2;
         }
 	}
 
     void Creature::GotHit(int dam)
     {
-        int hp;
-        hp = Creature::GetHp();
         LoseLife(dam);
+        int hp = GetHp();
         if (hp < 1)
-        Creature::SetAlive(false);
+        SetAlive(false);
     }
