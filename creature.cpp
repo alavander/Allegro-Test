@@ -1,5 +1,6 @@
 #include "creature.h"
 #include <allegro5/allegro_primitives.h>
+#include "stage.h"
 
 Creature::Creature(float x, float y, float stats[], int dirX, int ID, ALLEGRO_BITMAP *image)
 {
@@ -35,6 +36,9 @@ void Creature::Update()
 			curFrame = 0;
 		frameCount = 0;
 	}
+
+	if(GetID() == ENEMY && x < 0)
+        Stage::DecreaseStageLive();
 
 	if(x < 0 || x > 800)
 		SetAlive(false);

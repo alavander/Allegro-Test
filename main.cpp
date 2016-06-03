@@ -10,12 +10,15 @@
 #include "creature.h"
 #include "Const.h"
 #include "ftext.h"
+#include "stage.h"
 
 /*
 Prototype-level ToDo:
-- Implement Lives System -> Pointer na funkcje?
+- Implement victory condition
+- Implement Lives System -> DONE(opisac przy commicie)
 - Animations (moving(50%), standing, attacking, dying)->requires freaking sprite sheets
 - Prevent Spawning Creatures on top of each other
+- Map camera control :P
 
 Alpha-level ToDo:
 - Writing/Loading from files
@@ -33,6 +36,7 @@ std::list<GameObject *> objects;
 std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
 int STATE = MENU;
+int Stage::stage_live = 5;
 
 int main(int argc, char **argv)
 {
@@ -46,15 +50,15 @@ int main(int argc, char **argv)
     float gold = 100;
 
 //Unit Stats
-                           //dam hp speed gold cost/spawn chance/unit type
+                           //dam hp speed gold cost/spawn chance/unit type ID
 //The Bad
-float goblin_stat[]             ={8, 18, 4, 0, 3};
-float goblin_war_stat[]         ={13,25, 3, 12, 3};
-float troll_stat[]              ={25,84, 1, 3, 3};
+float goblin_stat[]             ={8, 18, 4, 0, 0};
+float goblin_war_stat[]         ={13,25, 3, 12, 0};
+float troll_stat[]              ={25,84, 1, 3, 0};
 //The Good
-float dwarf_stat[]              ={12,35,1.8,10, 0};
-float dwarf_berserker_stat[]    ={21,20,2.5,25, 1};
-float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
+float dwarf_stat[]              ={12,35,1.8,10, 1};
+float dwarf_berserker_stat[]    ={21,20,2.5,25, 2};
+float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
 
 
 //==============================================
@@ -67,6 +71,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
 	ALLEGRO_BITMAP *titleScreen = NULL;
+	ALLEGRO_BITMAP *heartIcon = NULL;
 
 //==============================================
 //ALLEGRO VARIABLES
@@ -105,6 +110,8 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
 	bgImage = al_load_bitmap("background.png");
 	uiImage = al_load_bitmap("background2.jpg");
 	titleScreen = al_load_bitmap("title_screen.png");
+	heartIcon = al_load_bitmap("heart_icon.png");
+	al_convert_mask_to_alpha(heartIcon, al_map_rgb(80,80,200));
 
 	/*Jednostki*/
 	dwarfImage = al_load_bitmap("dwarf_warrior.png");
@@ -259,6 +266,8 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
 				else
 					iter++;
 			}
+            //jesli stracimy hp to konczymy gre
+			if (Stage::GetStageLives() < 1) STATE = DEFEAT;
 
 		//==============================================
 		//RENDER
@@ -297,9 +306,16 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
               al_draw_text(font18, al_map_rgb(240,180,0), 520, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 10");
               al_draw_text(font18, al_map_rgb(240,180,0), 610, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 25");
               al_draw_text(font18, al_map_rgb(240,180,0), 700, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 40");
-
+              for (int i = 0; i < Stage::GetStageLives(); i++)
+              {
+                  al_draw_bitmap(heartIcon,15+(i*30), 20, 0);
+              }
             }
-
+              if (STATE == DEFEAT)
+              {
+                al_draw_text(font18, al_map_rgb(255, 30, 30), WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE, "You have been defeated!");
+                al_draw_text(font18, al_map_rgb(255, 30, 30), WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press ESC to quit!");
+              }
 			//FLIP BUFFERS========================
 			al_flip_display();
 			al_clear_to_color(al_map_rgb(0,0,0));
@@ -322,6 +338,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
 	al_destroy_bitmap(titleScreen);
+	al_destroy_bitmap(heartIcon);
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);
