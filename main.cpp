@@ -14,12 +14,16 @@
 /*
 Prototype-level ToDo:
 - Implement Lives System -> Pointer na funkcje?
-- Implement Resources(50%)
-- Resources generation(50%)
 - Animations (moving(50%), standing, attacking, dying)->requires freaking sprite sheets
+- Prevent Spawning Creatures on top of each other
+
+Alpha-level ToDo:
 - Writing/Loading from files
 - Sounds and music
-- Prevent Spawning Creatures on top of each other
+- Implement Resources(+gold bounty, +mana, +glory)
+- Deployment phase
+- Better combat
+- Stages/game modes
 */
 //==============================================
 //GLOBALS
@@ -42,15 +46,15 @@ int main(int argc, char **argv)
     float gold = 100;
 
 //Unit Stats
-                           //dam hp speed gold cost/spawn chance
+                           //dam hp speed gold cost/spawn chance/unit type
 //The Bad
-float goblin_stat[]         ={8, 18, 4, 0, 3};
-float goblin_war_stat[]     ={13,25, 3, 12, 3};
-float troll_stat[]          ={25,84, 1, 3, 3};
+float goblin_stat[]             ={8, 18, 4, 0, 3};
+float goblin_war_stat[]         ={13,25, 3, 12, 3};
+float troll_stat[]              ={25,84, 1, 3, 3};
 //The Good
-float dwarf_stat[]          ={12,35,1.8,10, 0};
-float dwarf_berserker_stat[]={21,20,2.5,25, 1};
-float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
+float dwarf_stat[]              ={12,35,1.8,10, 0};
+float dwarf_berserker_stat[]    ={21,20,2.5,25, 1};
+float dwarf_lord_stat[]         ={24,72,1.4,40, 2};
 
 
 //==============================================
@@ -62,7 +66,6 @@ float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
-	ALLEGRO_BITMAP *goldIcon = NULL;
 	ALLEGRO_BITMAP *titleScreen = NULL;
 
 //==============================================
@@ -101,7 +104,6 @@ float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
     /*GUI*/
 	bgImage = al_load_bitmap("background.png");
 	uiImage = al_load_bitmap("background2.jpg");
-	goldIcon = al_load_bitmap("gold.png");
 	titleScreen = al_load_bitmap("title_screen.png");
 
 	/*Jednostki*/
@@ -273,24 +275,29 @@ float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
             {
             al_draw_bitmap(bgImage, 0, 0, 0);
             al_draw_bitmap(uiImage, 0, 240, 0);
-            al_draw_bitmap(goldIcon, 80, 310, 0);
 			//BEGIN PROJECT RENDER===============
             for(iter = objects.begin(); iter != objects.end(); ++iter)
               {
                   (*iter)->Render();
               }
-              if (STATE == PAUSED)
-              al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
-            /* Row Selected Cursor */
-              al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 146+row_selected*15, 0);
-            /* Gold */
-              al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "%i", (int)gold);
 
             al_draw_bitmap(dwarfImage, 490,320, 0 );
             al_draw_tinted_bitmap(dwarfImage, al_map_rgb(180, 100, 100), 580, 320, 0);
             al_draw_tinted_bitmap(dwarfImage, al_map_rgb(100, 200, 100), 660, 320, 0);
-
             al_draw_rectangle(404+unit_selected*90,325,463+unit_selected*90,383, al_map_rgb(255, 240, 0), 1);
+            /* Row Selected Cursor */
+              al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 146+row_selected*15, 0);
+            /* UI text */
+              if (STATE == PAUSED)
+                al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
+              al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)gold);
+              al_draw_text(font18, al_map_rgb(255,255,255), 520, 275, ALLEGRO_ALIGN_CENTRE, "Dwarf");
+              al_draw_text(font18, al_map_rgb(255,255,255), 610, 275, ALLEGRO_ALIGN_CENTRE, "Berserker");
+              al_draw_text(font18, al_map_rgb(255,255,255), 700, 275, ALLEGRO_ALIGN_CENTRE, "Lord");
+              al_draw_text(font18, al_map_rgb(240,180,0), 520, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 10");
+              al_draw_text(font18, al_map_rgb(240,180,0), 610, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 25");
+              al_draw_text(font18, al_map_rgb(240,180,0), 700, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 40");
+
             }
 
 			//FLIP BUFFERS========================
@@ -314,7 +321,6 @@ float dwarf_lord_stat[]     ={24,72,1.4,40, 2};
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
-	al_destroy_bitmap(goldIcon);
 	al_destroy_bitmap(titleScreen);
 
 	//SHELL OBJECTS=================================
