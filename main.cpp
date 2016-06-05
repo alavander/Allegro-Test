@@ -15,17 +15,22 @@
 /*
 Prototype-level ToDo:
 - Implement victory condition
-- Implement Lives System -> DONE(opisac przy commicie)
-- Animations (moving(50%), standing, attacking, dying)->requires freaking sprite sheets
 - Prevent Spawning Creatures on top of each other
-- Map camera control :P
+- Map camera control
+-Unit types: Dwarf, Berserker(33%), Hero
+-Enemies types: Ogre, Goblin(33%), Gnoll
+- UI icons for creatures
+- Wrapping loading assess into functions/classes
+- Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
+- Implement smart attack range (based on creature size)
+- Made attack (dealing damage) done on the end of attack animation
 
 Alpha-level ToDo:
-- Writing/Loading from files
+- Writing/Loading from files (unit stats, save/load(serialization), player progress)
 - Sounds and music
 - Implement Resources(+gold bounty, +mana, +glory)
-- Deployment phase
-- Better combat
+- Deployment phase (different unit types)
+- Better combat (traits, special skills and different game mechanics)
 - Stages/game modes
 */
 //==============================================
@@ -37,6 +42,7 @@ std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
 int STATE = MENU;
 int Stage::stage_live = 5;
+int Stage::ObjectivesCount = 0;
 
 int main(int argc, char **argv)
 {
@@ -51,14 +57,14 @@ int main(int argc, char **argv)
 
 //Unit Stats
                            //dam hp speed gold cost/spawn chance/unit type ID
-//The Bad
-float goblin_stat[]             ={8, 18, 4, 0, 0};
-float goblin_war_stat[]         ={13,25, 3, 12, 0};
-float troll_stat[]              ={25,84, 1, 3, 0};
+//The Bad                                   //max frame, framedelay, framewidth, frameheight, framecolumn
+float goblin_stat[]             ={8, 18, 4, 0, 0, 8, 4, 64, 52, 8};
+float goblin_war_stat[]         ={13,25, 3, 12, 0, 0, 0, 0, 0, 0};
+float troll_stat[]              ={25,84, 1, 3, 0, 0, 0, 0, 0, 0};
 //The Good
-float dwarf_stat[]              ={12,35,1.8,10, 1};
-float dwarf_berserker_stat[]    ={21,20,2.5,25, 2};
-float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
+float dwarf_stat[]              ={12,35,1.8,10, 1, 0, 0, 0, 0, 0};
+float dwarf_berserker_stat[]    ={21,20,2.5,25, 2, 8, 6, 96, 96, 8};
+float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
 
 
 //==============================================
@@ -66,6 +72,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
 //==============================================
 
 	ALLEGRO_BITMAP *dwarfImage = NULL;
+	ALLEGRO_BITMAP *berserkerImage = NULL;
 	ALLEGRO_BITMAP *goblinImage = NULL;
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
@@ -116,6 +123,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
 	/*Jednostki*/
 	dwarfImage = al_load_bitmap("dwarf_warrior.png");
 	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
+	berserkerImage = al_load_bitmap("Barbarian_96px96p.png");
 
 	goblinImage = al_load_bitmap("goblin_move.png");
 	al_convert_mask_to_alpha(goblinImage, al_map_rgb(0,0,248));
@@ -179,7 +187,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
                             }
                         if (unit_selected == 2 && gold > dwarf_berserker_stat[3])
                             {
-                                Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, dwarfImage);
+                                Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, berserkerImage);
                                 objects.push_back(dwarf);
                                 gold -= dwarf_berserker_stat[3];
                                 Ftext *text = new Ftext(230, 325, -0.5, -25, 45, font18);
@@ -221,7 +229,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
             objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
 
             /*Collision Checking*/
-            if ( STATE == PLAYING)
+            if ( STATE == PLAYING || STATE == CUTSCENE)
             for(iter = objects.begin(); iter != objects.end(); ++iter)
             {
                 if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
@@ -245,7 +253,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
                 }
             };
             //Updating (move + ToDo statuses)
-                if( STATE == PLAYING)
+                if( STATE == PLAYING || STATE == CUTSCENE)
                 for(iter = objects.begin(); iter != objects.end(); ++iter)
                 {
                      if ( !(*iter)->GetAlive()) continue;
@@ -280,7 +288,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
             al_draw_bitmap(titleScreen, 0, 0, 0);
             al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 350, ALLEGRO_ALIGN_CENTRE , "Press spacebar to start");
             }
-			if (STATE == PLAYING || STATE == PAUSED)
+			if (STATE == PLAYING || STATE == PAUSED || STATE == CUTSCENE)
             {
             al_draw_bitmap(bgImage, 0, 0, 0);
             al_draw_bitmap(uiImage, 0, 240, 0);
@@ -333,6 +341,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3};
 	}
 
 	al_destroy_bitmap(dwarfImage);
+	al_destroy_bitmap(berserkerImage);
 	al_destroy_bitmap(goblinImage);
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);

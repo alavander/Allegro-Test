@@ -4,19 +4,23 @@
 
 Creature::Creature(float x, float y, float stats[], int dirX, int ID, ALLEGRO_BITMAP *image)
 {
+    //Initializing and stats
 	GameObject::Init(x, y, stats[2], dirX, 0, 0);
 	GameObject::SetID(ID);
     Creature::damage = stats[0];
     Creature::hp = stats[1];
     Creature::attack_cooldown = 0;
+	//Animation
 	Creature::image = image;
-	Creature::maxFrame = 8;//Dla goblina
+	Creature::maxFrame = stats[5];
+	Creature::frameDelay = stats[6];
+	Creature::frameWidth = stats[7];
+	Creature::frameHeight = stats[8];
+	Creature::animationColumns = stats[9];
+	//Always 0
 	Creature::curFrame = 0;
 	Creature::frameCount = 0;
-	Creature::frameDelay = 5;
-	Creature::frameWidth = 64;
-	Creature::frameHeight = 52;
-	Creature::animationColumns = 8;
+    //Unit type
 	Creature::UNIT_TYPE = stats[4];
 }
 
@@ -60,7 +64,8 @@ void Creature::Render()
             switch(GetType())//Drawing different color based on unit type.
             {
             case BERSERKER:
-                al_draw_tinted_bitmap(image, al_map_rgb(180, 100, 100),x-32,106+y*15, 0);
+                al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
+                    x - frameWidth / 2+15, 91+y*15, 0);
                 break;
             case LORD:
                 al_draw_tinted_bitmap(image, al_map_rgb(100, 200, 100),x-32,106+y*15, 0);
