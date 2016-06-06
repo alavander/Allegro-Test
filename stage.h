@@ -3,25 +3,34 @@
 class Stage
 {
     public:
-        static int stage_live;
-        static int GetStageLives() {return stage_live;}
-        static void DecreaseStageLive() {stage_live -= 1;}
+        static int lives;
+        static int GetStageLives() {return lives;}
+        static void DecreaseStageLive() {lives -= 1;}
+
+        static float gold;
+        static int GetStageGold() {return gold;}
+        static float AwardGold(float amount) {gold += amount;}
+        static float SpendGold(float amount) {gold -= amount;}
 
         //Victory Condition-Related:
         static int STAGE_VICTORY_CONDITION; //Hero_hunting, bloodbath, siege
         static int ObjectivesCount; // w zaleznosci od victory condition, liczymy ilosc tego co potrzebujemy
+        static int GetObjectivesCount() {return ObjectivesCount;};
         static bool CheckVictoryCondition(int obj_count)
         {
             switch (STAGE_VICTORY_CONDITION)
             {
                 case HERO_HUNTING:
-                if (obj_count > 0) return true;
+                if (obj_count >= 0) return true;
+                else return false;
                 break;
                 case BLOODBATH:
-                if (obj_count > 40) return true;
+                if (obj_count >= 40) return true;
+                else return false;
                 break;
                 case SIEGE:
-                if (obj_count > 20) return true;
+                if (obj_count >= 20) return true;
+                else return false;
                 break;
             }
         };

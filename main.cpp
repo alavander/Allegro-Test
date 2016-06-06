@@ -14,7 +14,6 @@
 
 /*
 Prototype-level ToDo:
-- Implement victory condition
 - Prevent Spawning Creatures on top of each other
 - Map camera control
 -Unit types: Dwarf, Berserker(33%), Hero
@@ -25,13 +24,19 @@ Prototype-level ToDo:
 - Implement smart attack range (based on creature size)
 - Made attack (dealing damage) done on the end of attack animation
 
+Classes:
+- Implement Squad Class - responsible for holding stats, name, exp, inventory.
+    can be put in deployment slot and is base for creature spawning.
+- Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
+    select units and hero for the next mission.
+
 Alpha-level ToDo:
 - Writing/Loading from files (unit stats, save/load(serialization), player progress)
 - Sounds and music
 - Implement Resources(+gold bounty, +mana, +glory)
 - Deployment phase (different unit types)
 - Better combat (traits, special skills and different game mechanics)
-- Stages/game modes
+- Stages/game modes/introduction campaign
 */
 //==============================================
 //GLOBALS
@@ -41,8 +46,17 @@ std::list<GameObject *> objects;
 std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
 int STATE = MENU;
-int Stage::stage_live = 5;
+
+/* Stage variables */
+int Stage::STAGE_VICTORY_CONDITION = 1;
+int Stage::lives = 5;
 int Stage::ObjectivesCount = 0;
+float Stage::gold = 100;
+
+/* Game Loop Functions */
+void Remove_dead_objects(); //Usuwa martwe obiekty
+void Remove_all_objects(); //Usuwa wszystkie obiekty
+void Stage_reset(); //Resetuje wartosci stage'a
 
 int main(int argc, char **argv)
 {
@@ -53,7 +67,6 @@ int main(int argc, char **argv)
     bool render = false;
     int row_selected = 1;
     int unit_selected = 1;
-    float gold = 100;
 
 //Unit Stats
                            //dam hp speed gold cost/spawn chance/unit type ID
@@ -173,32 +186,32 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
                 if (unit_selected < 3) unit_selected += 1;
                 break;
             case ALLEGRO_KEY_SPACE:
-                    if (STATE == MENU) STATE = PLAYING;
+                    if (STATE == MENU || STATE == DEFEAT) STATE = PLAYING;
                     else if (STATE == PLAYING)
                     {
-                        if (unit_selected == 1 && gold > dwarf_stat[3])
+                        if (unit_selected == 1 && Stage::GetStageGold() > dwarf_stat[3])
                             {
                                 Creature *dwarf = new Creature( 20, row_selected, dwarf_stat, 1, PLAYER, dwarfImage);
                                 objects.push_back(dwarf);
-                                gold -= dwarf_stat[3];
+                                Stage::SpendGold(dwarf_stat[3]);
                                 Ftext *text = new Ftext(230, 325, -0.5, -10, 45, font18);
                                 objects.push_back(text);
                                 break;
                             }
-                        if (unit_selected == 2 && gold > dwarf_berserker_stat[3])
+                        if (unit_selected == 2 && Stage::GetStageGold() > dwarf_berserker_stat[3])
                             {
                                 Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, berserkerImage);
                                 objects.push_back(dwarf);
-                                gold -= dwarf_berserker_stat[3];
+                                Stage::SpendGold(dwarf_berserker_stat[3]);
                                 Ftext *text = new Ftext(230, 325, -0.5, -25, 45, font18);
                                 objects.push_back(text);
                                 break;
                             }
-                        if (unit_selected == 3 && gold > dwarf_lord_stat[3])
+                        if (unit_selected == 3 && Stage::GetStageGold() > dwarf_lord_stat[3])
                             {
                                 Creature *dwarf = new Creature( 20, row_selected, dwarf_lord_stat, 1, PLAYER, dwarfImage);
                                 objects.push_back(dwarf);
-                                gold -= dwarf_lord_stat[3];
+                                Stage::SpendGold(dwarf_lord_stat[3]);
                                 Ftext *text = new Ftext(230, 325, -0.5, -40, 45, font18);
                                 objects.push_back(text);
                                 break;
@@ -223,7 +236,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
 
             /*Gold Generation*/
             if(STATE == PLAYING)
-            gold += 0.04;
+            Stage::AwardGold(0.04);
 
             /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
             objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
@@ -264,19 +277,22 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
                 }
 
 			//cull the dead
-			for(iter = objects.begin(); iter != objects.end(); )
-			{
-				if(! (*iter)->GetAlive())
-				{
-					delete (*iter);
-					iter = objects.erase(iter);
-				}
-				else
-					iter++;
-			}
-            //jesli stracimy hp to konczymy gre
-			if (Stage::GetStageLives() < 1) STATE = DEFEAT;
+            Remove_dead_objects();
 
+            //jesli stracimy hp to konczymy gre - observer pattern
+			if (Stage::GetStageLives() < 1)
+            {
+                STATE = DEFEAT;
+                Remove_all_objects();
+                Stage_reset();
+            }
+			//jesli spelnimy objectives misji, to wygrywamy gre - observer pattern
+            if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)
+            {
+                STATE = MENU;
+                Remove_all_objects();
+                Stage_reset();
+            }
 		//==============================================
 		//RENDER
 		//==============================================
@@ -307,7 +323,7 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
             /* UI text */
               if (STATE == PAUSED)
                 al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
-              al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)gold);
+              al_draw_textf(font18, al_map_rgb(240, 180, 0), 200, 325, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)Stage::GetStageGold());
               al_draw_text(font18, al_map_rgb(255,255,255), 520, 275, ALLEGRO_ALIGN_CENTRE, "Dwarf");
               al_draw_text(font18, al_map_rgb(255,255,255), 610, 275, ALLEGRO_ALIGN_CENTRE, "Berserker");
               al_draw_text(font18, al_map_rgb(255,255,255), 700, 275, ALLEGRO_ALIGN_CENTRE, "Lord");
@@ -316,13 +332,14 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
               al_draw_text(font18, al_map_rgb(240,180,0), 700, 295, ALLEGRO_ALIGN_CENTRE, "Gold: 40");
               for (int i = 0; i < Stage::GetStageLives(); i++)
               {
-                  al_draw_bitmap(heartIcon,15+(i*30), 20, 0);
+                  al_draw_bitmap(heartIcon,5+(i*30), 0, 0);
               }
+              al_draw_textf(font18, al_map_rgb(240,30,0), 700, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 40-(Stage::GetObjectivesCount()));
             }
               if (STATE == DEFEAT)
               {
                 al_draw_text(font18, al_map_rgb(255, 30, 30), WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE, "You have been defeated!");
-                al_draw_text(font18, al_map_rgb(255, 30, 30), WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press ESC to quit!");
+                al_draw_text(font18, al_map_rgb(255, 30, 30), WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press spacebar to restart!");
               }
 			//FLIP BUFFERS========================
 			al_flip_display();
@@ -356,4 +373,34 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
 	al_destroy_display(display);
 
 	return 0;
+}
+
+void Remove_dead_objects()
+{
+			for(iter = objects.begin(); iter != objects.end(); )
+			{
+				if(! (*iter)->GetAlive())
+				{
+					delete (*iter);
+					iter = objects.erase(iter);
+				}
+				else
+					iter++;
+			}
+};
+
+void Remove_all_objects()
+{
+			for(iter = objects.begin(); iter != objects.end(); )
+			{
+					delete (*iter);
+					iter = objects.erase(iter);
+			}
+};
+
+void Stage_reset() // Przeniesc jako metode w stage.h
+{
+     Stage::lives = 5;
+     Stage::ObjectivesCount = 0;
+     Stage::gold = 100;
 }

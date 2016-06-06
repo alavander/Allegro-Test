@@ -96,5 +96,8 @@ void Creature::Render()
         LoseLife(dam);
         int hp = GetHp();
         if (hp < 1)
+        {
         SetAlive(false);
+        if (GetID() == ENEMY) Stage::ObjectivesCount++;
+        }
     }
