@@ -11,6 +11,7 @@
 #include "Const.h"
 #include "ftext.h"
 #include "stage.h"
+#include "squad.h"
 
 /*
 Prototype-level ToDo:
@@ -26,7 +27,7 @@ Prototype-level ToDo:
 
 Classes:
 - Implement Squad Class - responsible for holding stats, name, exp, inventory.
-    can be put in deployment slot and is base for creature spawning.
+    can be put in deployment slot and is base for creature spawning. (70% done)
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
     select units and hero for the next mission.
 
@@ -78,6 +79,9 @@ float troll_stat[]              ={25,84, 1, 3, 0, 0, 0, 0, 0, 0};
 float dwarf_stat[]              ={12,35,1.8,10, 1, 0, 0, 0, 0, 0};
 float dwarf_berserker_stat[]    ={21,20,2.5,25, 2, 8, 6, 96, 96, 8};
 float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
+
+unit_stats dwarf_squad_stat = {12, 35, 1.8};
+unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
 
 
 //==============================================
@@ -186,7 +190,17 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
                 if (unit_selected < 3) unit_selected += 1;
                 break;
             case ALLEGRO_KEY_SPACE:
-                    if (STATE == MENU || STATE == DEFEAT) STATE = PLAYING;
+                    if (STATE == MENU || STATE == DEFEAT)
+                    {
+                    STATE = PLAYING;
+                    break;
+                    }
+                    else if (STATE == DEFEAT)
+                    {
+                        Remove_all_objects();
+                        Stage_reset();
+                        break;
+                    }
                     else if (STATE == PLAYING)
                     {
                         if (unit_selected == 1 && Stage::GetStageGold() > dwarf_stat[3])
@@ -217,6 +231,12 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
                                 break;
                             }
                     }
+            case ALLEGRO_KEY_B:
+            {
+            Squad *dwarf_enlist = new Squad(1, DWARF, 10, dwarf_squad_stat, dwarf_squad_anim);
+            delete dwarf_enlist;
+            break;
+            }
 		}
 		}
 		//==============================================
@@ -283,8 +303,6 @@ float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
 			if (Stage::GetStageLives() < 1)
             {
                 STATE = DEFEAT;
-                Remove_all_objects();
-                Stage_reset();
             }
 			//jesli spelnimy objectives misji, to wygrywamy gre - observer pattern
             if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)

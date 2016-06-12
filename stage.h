@@ -3,10 +3,11 @@
 class Stage
 {
     public:
+        /* Lives related */
         static int lives;
         static int GetStageLives() {return lives;}
         static void DecreaseStageLive() {lives -= 1;}
-
+        /* Gold related */
         static float gold;
         static int GetStageGold() {return gold;}
         static float AwardGold(float amount) {gold += amount;}
