@@ -69,19 +69,12 @@ int main(int argc, char **argv)
     int row_selected = 1;
     int unit_selected = 1;
 
-//Unit Stats
-                           //dam hp speed gold cost/spawn chance/unit type ID
-//The Bad                                   //max frame, framedelay, framewidth, frameheight, framecolumn
-float goblin_stat[]             ={8, 18, 4, 0, 0, 8, 4, 64, 52, 8};
-float goblin_war_stat[]         ={13,25, 3, 12, 0, 0, 0, 0, 0, 0};
-float troll_stat[]              ={25,84, 1, 3, 0, 0, 0, 0, 0, 0};
-//The Good
-float dwarf_stat[]              ={12,35,1.8,10, 1, 0, 0, 0, 0, 0};
-float dwarf_berserker_stat[]    ={21,20,2.5,25, 2, 8, 6, 96, 96, 8};
-float dwarf_lord_stat[]         ={24,72,1.4,40, 3, 0, 0, 0, 0, 0};
-
-unit_stats dwarf_squad_stat = {12, 35, 1.8};
-unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
+stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
+animation dwarf_anim = {0,0,0,0,0,NULL};
+Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
+stats goblin_stat = {8, 18, 2.5, 0};
+animation goblin_anim = {8,4,64,52,8,NULL};
+Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
 
 
 //==============================================
@@ -203,16 +196,16 @@ unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
                     }
                     else if (STATE == PLAYING)
                     {
-                        if (unit_selected == 1 && Stage::GetStageGold() > dwarf_stat[3])
+                        if (unit_selected == 1 && Stage::GetStageGold() > dwarf_enlist->GetGoldCost())
                             {
-                                Creature *dwarf = new Creature( 20, row_selected, dwarf_stat, 1, PLAYER, dwarfImage);
+                                Creature *dwarf = new Creature( 20, row_selected, dwarfImage, *dwarf_enlist);
                                 objects.push_back(dwarf);
-                                Stage::SpendGold(dwarf_stat[3]);
+                                Stage::SpendGold(dwarf_enlist->GetGoldCost());
                                 Ftext *text = new Ftext(230, 325, -0.5, -10, 45, font18);
                                 objects.push_back(text);
                                 break;
                             }
-                        if (unit_selected == 2 && Stage::GetStageGold() > dwarf_berserker_stat[3])
+                        /*if (unit_selected == 2 && Stage::GetStageGold() > dwarf_berserker_stat[3])
                             {
                                 Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, berserkerImage);
                                 objects.push_back(dwarf);
@@ -229,14 +222,8 @@ unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
                                 Ftext *text = new Ftext(230, 325, -0.5, -40, 45, font18);
                                 objects.push_back(text);
                                 break;
-                            }
+                            }*/
                     }
-            case ALLEGRO_KEY_B:
-            {
-            Squad *dwarf_enlist = new Squad(1, DWARF, 10, dwarf_squad_stat, dwarf_squad_anim);
-            delete dwarf_enlist;
-            break;
-            }
 		}
 		}
 		//==============================================
@@ -250,7 +237,7 @@ unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
             /*Goblin Spawning*/
             if(STATE == PLAYING && rand() % 115 == 0)
             {
-                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, goblin_stat, -1, ENEMY, goblinImage);
+                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, goblinImage, *goblin_pillager);
                 objects.push_back(goblin);
             }
 
@@ -389,6 +376,8 @@ unit_animation dwarf_squad_anim = {0,0,0,0,0,NULL};
 	al_destroy_timer(timer);
 	al_destroy_event_queue(event_queue);
 	al_destroy_display(display);
+
+    delete dwarf_enlist;
 
 	return 0;
 }

@@ -1,5 +1,8 @@
 #pragma once
 #include "objects.h"
+#include <allegro5/allegro_primitives.h>
+#include "stage.h"
+#include "squad.h"
 #include <iostream>
 
 class Creature : public GameObject
@@ -11,8 +14,8 @@ protected:
 
 
 public:
-	Creature(float x, float y, float stats[], int dirX, int ID, ALLEGRO_BITMAP *image);
-
+	Creature(float x, float y, ALLEGRO_BITMAP *image, Squad squad_name);
+    Squad *ptr_to_squad;
 	void Destroy();
 	void Update();
 	void Render();

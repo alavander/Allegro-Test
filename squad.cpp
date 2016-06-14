@@ -1,15 +1,22 @@
 #include "squad.h"
 #include "Const.h"
-#include <iostream>
 
-Squad::Squad(int squad_ID, int UNIT_TYPE, int gold_cost, unit_stats sq_stat, unit_animation sq_anim)
+Squad::Squad(int FRACTION, stats sq_stat, animation sq_anim)
 {
-    Squad::squad_ID = squad_ID;
-    Squad::UNIT_TYPE = UNIT_TYPE;
+    Squad::FRACTION = FRACTION;
     Squad::level = 1;
     Squad::experience = 0;
-    Squad::gold_cost = gold_cost;
     Squad::squad_stat = &sq_stat;
     Squad::squad_anim = &sq_anim;
+    Squad::gold_cost = sq_stat.gold_cost;
+    Squad::damage = sq_stat.damage;
+    Squad::hp = sq_stat.hp;
+    Squad::speed = sq_stat.speed;
+    Squad::maxFrame = sq_anim.maxFrame;
+    Squad::frameDelay = sq_anim.frameDelay;
+    Squad::frameWidth = sq_anim.frameWidth;
+    Squad::frameHeight = sq_anim.frameHeight;
+    Squad::animationColumns = sq_anim.animationColumns;
+
 };
 
