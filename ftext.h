@@ -1,5 +1,4 @@
 #pragma once
-
 #include "objects.h"
 #include <allegro5/allegro_font.h>
 

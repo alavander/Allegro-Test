@@ -17,6 +17,7 @@ GameObject::GameObject()
 	frameHeight = 0;
 	animationColumns = 0;
 	animationDirection = 0;
+	int ANIMATION = 0;
 
 	image = NULL;
 	alive = true;
@@ -40,8 +41,11 @@ void GameObject::Init(float x, float y, float velX, int dirX, float velY, int di
 
 void GameObject::Update()
 {
+    if(CanMove())
+    {
 	x += velX * dirX;
 	y += velY * dirY;
+    }
 }
 
 void GameObject::Render()

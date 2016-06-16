@@ -16,13 +16,13 @@ struct animation
 	int frameWidth;
 	int frameHeight;
 	int animationColumns;
+	int attackDelay;
 	ALLEGRO_BITMAP *image;
 };
 
 class Squad
 {
     private:
-        int UNIT_TYPE;              //Typ jednostki -> zmienic potem na (image)
         int level;                  //Poziom jednostki
         float experience;           //Punkty doswiadczenia ktore ma jednostka
         int gold_cost;              //Ile zlota kosztuje przywolanie jednej jednostki
@@ -36,7 +36,7 @@ class Squad
         int frameWidth;
         int frameHeight;
         int animationColumns;
-        ALLEGRO_BITMAP *image;
+        int attackDelay;
         int FRACTION;
         //int unit_number;          //Aktualny stan osobowy squadu
         //int max_unit_number;      //Maksymalny stan osobowy squadu
@@ -47,13 +47,13 @@ class Squad
         //Public visibility
         stats *squad_stat; //Pointer do bazowych statow jednostki
         animation *squad_anim; //Pointer do IMG oraz informacji o animacji jednostki
+        ALLEGRO_BITMAP *image;
         //Setters:
         void AwardSquadXP(int var) {experience += var;}
         //Getters:
         float GetSquadXP() {return experience;}
         float GetSpeed() {return speed;}
         int GetGoldCost() {return gold_cost;}
-        int GetUnitType() {return UNIT_TYPE;}
         int GetDamage() {return damage;}
         int GetHp() {return hp;}
         int GetMaxFrame() {return maxFrame;}
@@ -62,6 +62,7 @@ class Squad
         int GetFrameHeight() {return frameHeight;}
         int GetAnimationColumns() {return animationColumns;}
         int GetFraction() {return FRACTION;}
+        int GetAttackDelay() {return attackDelay;}
 
         //Other:
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.

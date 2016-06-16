@@ -3,18 +3,18 @@
 #include <allegro5/allegro_primitives.h>
 #include "stage.h"
 #include "squad.h"
-#include <iostream>
+
 
 class Creature : public GameObject
 {
 private:
-    int damage, hp, attack_cooldown, UNIT_TYPE;
+    int damage, hp, attack_cooldown, attackDelay, UNIT_TYPE;
 
 protected:
 
 
 public:
-	Creature(float x, float y, ALLEGRO_BITMAP *image, Squad squad_name);
+	Creature(float x, float y, Squad squad_name);
     Squad *ptr_to_squad;
 	void Destroy();
 	void Update();

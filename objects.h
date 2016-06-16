@@ -27,6 +27,7 @@ protected:
 	int frameHeight;
 	int animationColumns;
 	int animationDirection;
+	int ANIMATION;
 
 	ALLEGRO_BITMAP *image;
 
@@ -61,6 +62,7 @@ public:
 	bool GetAlive() {return alive;}
 	bool GetSolid() {return solid;}
 	bool CanMove() {return movable;}
+	bool GetAnimation() {return ANIMATION;}
 
 	/* Wyrzuciæ jako wspólny interface - Range/Collisions? */
 	bool CollisionCheck(GameObject *otherObject);
@@ -73,4 +75,5 @@ public:
 	void SetSolid(bool solid) {GameObject::solid = solid;}
 	void SetMove(bool movable) {GameObject::movable = movable;}
 	void SetImage(ALLEGRO_BITMAP *image) {GameObject::image = image;}
+	void SetAnim(int ANIMATION) {GameObject::ANIMATION = ANIMATION;}
 };

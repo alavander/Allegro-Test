@@ -17,17 +17,17 @@
 Prototype-level ToDo:
 - Prevent Spawning Creatures on top of each other
 - Map camera control
--Unit types: Dwarf, Berserker(33%), Hero
--Enemies types: Ogre, Goblin(33%), Gnoll
+-Unit types: Dwarf, Berserker(0%), Guardian, Hero
+-Enemies types: Troll(33%), Goblin(66%), Gnoll(33%), Ogre Leader
 - UI icons for creatures
 - Wrapping loading assess into functions/classes
 - Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
 - Implement smart attack range (based on creature size)
-- Made attack (dealing damage) done on the end of attack animation
+- Made attack (dealing damage) done on the end of attack animation (done)
 
 Classes:
 - Implement Squad Class - responsible for holding stats, name, exp, inventory.
-    can be put in deployment slot and is base for creature spawning. (70% done)
+    can be put in deployment slot and is base for creature spawning. (80% done)
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
     select units and hero for the next mission.
 
@@ -54,6 +54,10 @@ int Stage::lives = 5;
 int Stage::ObjectivesCount = 0;
 float Stage::gold = 100;
 
+/* GUI variables */
+int row_selected = 1;
+int unit_selected = 1;
+
 /* Game Loop Functions */
 void Remove_dead_objects(); //Usuwa martwe obiekty
 void Remove_all_objects(); //Usuwa wszystkie obiekty
@@ -66,24 +70,15 @@ int main(int argc, char **argv)
 //==============================================
     bool done = false;
     bool render = false;
-    int row_selected = 1;
-    int unit_selected = 1;
-
-stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
-animation dwarf_anim = {0,0,0,0,0,NULL};
-Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
-stats goblin_stat = {8, 18, 2.5, 0};
-animation goblin_anim = {8,4,64,52,8,NULL};
-Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
-
 
 //==============================================
 //PROJECT VARIABLES
 //==============================================
-
+    ALLEGRO_BITMAP *troopImage = NULL;
 	ALLEGRO_BITMAP *dwarfImage = NULL;
-	ALLEGRO_BITMAP *berserkerImage = NULL;
 	ALLEGRO_BITMAP *goblinImage = NULL;
+	ALLEGRO_BITMAP *trollImage = NULL;
+	ALLEGRO_BITMAP *gnollImage = NULL;
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
@@ -129,28 +124,47 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
 	titleScreen = al_load_bitmap("title_screen.png");
 	heartIcon = al_load_bitmap("heart_icon.png");
 	al_convert_mask_to_alpha(heartIcon, al_map_rgb(80,80,200));
-
-	/*Jednostki*/
-	dwarfImage = al_load_bitmap("dwarf_warrior.png");
-	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
-	berserkerImage = al_load_bitmap("Barbarian_96px96p.png");
-
-	goblinImage = al_load_bitmap("goblin_move.png");
-	al_convert_mask_to_alpha(goblinImage, al_map_rgb(0,0,248));
 	hand = al_load_bitmap("hand.png");
 	al_convert_mask_to_alpha(hand, al_map_rgb(255,0,0));
-    /*Timer*/
+	/*Jednostki*/
+	troopImage = al_load_bitmap("gfx/units/trooper.png");
+	dwarfImage = al_load_bitmap("gfx/units/DwarfWarrior.png");
+	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
+	goblinImage = al_load_bitmap("gfx/units/GoblinPillager.png");
+	trollImage = al_load_bitmap("gfx/units/TrollLeader.png");
+	al_convert_mask_to_alpha(trollImage, al_map_rgb(255,0,0));
+	gnollImage = al_load_bitmap("gfx/units/GnollAxeman.png");
+	al_convert_mask_to_alpha(gnollImage, al_map_rgb(255,0,0));
+//==============================================
+//SQUAD HANDLING
+//==============================================
+    stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
+    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage};
+    Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
+    stats troop_stat = {10, 16, 2.2, 8};
+    animation troop_anim = {6, 8, 135, 105, 6,8, troopImage};
+    Squad *trooper = new Squad(DWARFKIN, troop_stat, troop_anim);
+    stats goblin_stat = {8, 18, 2.5, 0};
+    animation goblin_anim = {4,6,125,100,4,12,goblinImage};
+    Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
+    stats troll_stat = {30, 175, 1.5, 0};
+    animation troll_anim = {8,6,125,115,8,6,trollImage};
+    Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
+    stats gnoll_stat = {14, 25, 2.2, 0};
+    animation gnoll_anim = {8,5,99,79,8,5,gnollImage};
+    Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
+
+//==============================================
+//TIMER INIT AND STARTUP
+//==============================================
 	srand(time(NULL));
-	//==============================================
-	//TIMER INIT AND STARTUP
-	//==============================================
 	event_queue = al_create_event_queue();
 	timer = al_create_timer(1.0 / 60);
 
 	al_register_event_source(event_queue, al_get_timer_event_source(timer));
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
-
 	al_start_timer(timer);
+
 	while(!done)
 	{
 		ALLEGRO_EVENT ev;
@@ -183,8 +197,9 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
                 if (unit_selected < 3) unit_selected += 1;
                 break;
             case ALLEGRO_KEY_SPACE:
-                    if (STATE == MENU || STATE == DEFEAT)
-                    {
+                    if (STATE == MENU )
+                    {                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
+                objects.push_back(goblin);
                     STATE = PLAYING;
                     break;
                     }
@@ -198,7 +213,7 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
                     {
                         if (unit_selected == 1 && Stage::GetStageGold() > dwarf_enlist->GetGoldCost())
                             {
-                                Creature *dwarf = new Creature( 20, row_selected, dwarfImage, *dwarf_enlist);
+                                Creature *dwarf = new Creature( 20, row_selected, *trooper);
                                 objects.push_back(dwarf);
                                 Stage::SpendGold(dwarf_enlist->GetGoldCost());
                                 Ftext *text = new Ftext(230, 325, -0.5, -10, 45, font18);
@@ -234,11 +249,24 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
 			render = true;
 			//=====================
 
-            /*Goblin Spawning*/
-            if(STATE == PLAYING && rand() % 115 == 0)
+            /*Enemy Spawning*/
+            if((STATE == PLAYING) && rand() % 115 == 0)
             {
-                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, goblinImage, *goblin_pillager);
+                if (rand() % 10 == 0)
+                {
+                Creature *troll = new Creature(WIDTH-20, rand() % 3 + 1, *war_troll);
+                objects.push_back(troll);
+                }
+                else if (rand() % 3 == 0)
+                {
+                Creature *gnoll = new Creature(WIDTH-20, rand() % 3 + 1, *gnoll_axeman);
+                objects.push_back(gnoll);
+                }
+                else
+                {
+                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
                 objects.push_back(goblin);
+                }
             }
 
             /*Gold Generation*/
@@ -253,6 +281,7 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
             for(iter = objects.begin(); iter != objects.end(); ++iter)
             {
                 if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
+                (*iter)->SetAnim(WALKING);
                 for(iter2 = objects.begin(); iter2 != objects.end(); ++iter2)
                 {
                     if( !(*iter2)->GetAlive() || (*iter2) == (*iter) || !(*iter2)->GetSolid())  continue;
@@ -278,8 +307,8 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
                 {
                      if ( !(*iter)->GetAlive()) continue;
                      {
-                        if((*iter)->CanMove()) (*iter)->Update();
-                        else ((*iter)->SetMove(true));
+                        (*iter)->Update();
+                        (*iter)->SetMove(true);
                      }
                 }
 
@@ -361,10 +390,11 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
 		delete (*iter);
 		iter = objects.erase(iter);
 	}
-
+    al_destroy_bitmap(troopImage);
 	al_destroy_bitmap(dwarfImage);
-	al_destroy_bitmap(berserkerImage);
 	al_destroy_bitmap(goblinImage);
+	al_destroy_bitmap(trollImage);
+	al_destroy_bitmap(gnollImage);
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
@@ -378,6 +408,10 @@ Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
 	al_destroy_display(display);
 
     delete dwarf_enlist;
+    delete trooper;
+    delete goblin_pillager;
+    delete war_troll;
+    delete gnoll_axeman;
 
 	return 0;
 }
@@ -405,9 +439,10 @@ void Remove_all_objects()
 			}
 };
 
-void Stage_reset() // Przeniesc jako metode w stage.h
+void Stage_reset() // Przeniesc jako metode do stage.h
 {
      Stage::lives = 5;
      Stage::ObjectivesCount = 0;
      Stage::gold = 100;
+     STATE = PLAYING;
 }

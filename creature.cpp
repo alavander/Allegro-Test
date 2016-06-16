@@ -1,24 +1,27 @@
 #include "creature.h"
+#include <iostream>
 
 
-Creature::Creature(float x, float y, ALLEGRO_BITMAP *image, Squad squad_name)
+Creature::Creature(float x, float y, Squad squad_name)
 {
     Creature::ptr_to_squad = &squad_name;
     //Initializing and stats
 	GameObject::Init(x, y, squad_name.GetSpeed(), squad_name.GetFraction() == DWARFKIN ? 1 : -1 , 0, 0);
 	GameObject::SetID(squad_name.GetFraction() == DWARFKIN ? PLAYER : ENEMY);
+	GameObject::SetAnim(0);
     Creature::damage = squad_name.GetDamage();
     Creature::hp = squad_name.GetHp();
-    Creature::attack_cooldown = 0;
 	//Animation
-	Creature::image = image;
+	Creature::image = squad_name.image;
 	Creature::maxFrame = squad_name.GetMaxFrame();
 	Creature::frameDelay = squad_name.GetFrameDelay();
 	Creature::frameWidth = squad_name.GetFrameWidth();
 	Creature::frameHeight = squad_name.GetFrameHeight();
 	Creature::animationColumns = squad_name.GetAnimationColumns();
+	Creature::attackDelay = squad_name.GetAttackDelay();
 	Creature::curFrame = 0;
 	Creature::frameCount = 0;
+    Creature::attack_cooldown = attackDelay*animationColumns;
 }
 
 void Creature::Destroy()
@@ -30,6 +33,9 @@ void Creature::Update()
 {
 	GameObject::Update();
 
+    switch(ANIMATION)
+    {
+    case WALKING:
 	if(++frameCount >= frameDelay)
 	{
 		curFrame++;
@@ -37,6 +43,17 @@ void Creature::Update()
 			curFrame = 0;
 		frameCount = 0;
 	}
+	break;
+    case ATTACKING:
+	if(++frameCount >= attackDelay)
+	{
+		curFrame++;
+		if(curFrame >= maxFrame)
+			curFrame = 0;
+		frameCount = 0;
+	}
+	break;
+    }
 
 	if(GetID() == ENEMY && x < 0)
         Stage::DecreaseStageLive();
@@ -52,18 +69,20 @@ void Creature::Render()
     if (GetID() == ENEMY)
     {
     al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(225,0,0), 1);//Red Circle for Enemies
-	al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
-		x - frameWidth / 2, 116+y*15, 0);
+	al_draw_bitmap_region(image, curFrame * frameWidth, (ANIMATION*frameHeight), frameWidth, frameHeight,
+		x - frameWidth / 2, 175+y*15-frameHeight, ALLEGRO_FLIP_HORIZONTAL);
     }
     else
     {
         al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
-        al_draw_bitmap(image, x-32,106+y*15, 0 );
+        al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
+		x - frameWidth / 2, 175+y*15-frameHeight, 0);
     }
 }
 
 	int Creature::CheckAttack()
 	{
+        SetAnim(ATTACKING);
 	    if (GetCooldown() > 0)
         {
         SetCooldown(GetCooldown()-1);
@@ -71,7 +90,7 @@ void Creature::Render()
         }
         else
         {
-        SetCooldown(60+rand()%20);
+        SetCooldown(attackDelay*animationColumns);
         return GetAttackValue()/2 + rand() % GetAttackValue()/2;
         }
 	}

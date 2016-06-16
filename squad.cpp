@@ -17,6 +17,8 @@ Squad::Squad(int FRACTION, stats sq_stat, animation sq_anim)
     Squad::frameWidth = sq_anim.frameWidth;
     Squad::frameHeight = sq_anim.frameHeight;
     Squad::animationColumns = sq_anim.animationColumns;
+    Squad::image = sq_anim.image;
+    Squad::attackDelay =sq_anim.attackDelay;
 
 };
 
