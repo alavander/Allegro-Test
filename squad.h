@@ -27,9 +27,9 @@ class Squad
         float experience;           //Punkty doswiadczenia ktore ma jednostka
         int gold_cost;              //Ile zlota kosztuje przywolanie jednej jednostki
         //Taken from stats
-        int damage;
-        int hp;
-        float speed;
+        int damage;                 //Obrazenia ktore zadaje jednostka
+        int hp;                     //Ilosc pkt zycia ktore posiada jednostka
+        float speed;                //Szybkosc ruchu jednostki
         //Taken from anim
         int maxFrame;
         int frameDelay;
@@ -68,5 +68,6 @@ class Squad
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.
         void UpdateStats(); //Updatuje staty(zmiany eq lub level upy)
         //bool isDeploying; //Jesli jest isDeploying to znika z listy do deploy
+        //bool isSelected; //Jesli jest wybrane, to pokazuje staty i img wybranego Squada
 };
 

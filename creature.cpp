@@ -1,5 +1,5 @@
 #include "creature.h"
-#include <iostream>
+
 
 
 Creature::Creature(float x, float y, Squad squad_name)
@@ -36,6 +36,7 @@ void Creature::Update()
     switch(ANIMATION)
     {
     case WALKING:
+    if(CanMove())
 	if(++frameCount >= frameDelay)
 	{
 		curFrame++;

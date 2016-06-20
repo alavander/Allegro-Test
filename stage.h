@@ -10,8 +10,8 @@ class Stage
         /* Gold related */
         static float gold;
         static int GetStageGold() {return gold;}
-        static float AwardGold(float amount) {gold += amount;}
-        static float SpendGold(float amount) {gold -= amount;}
+        static void AwardGold(float amount) {gold += amount;}
+        static void SpendGold(float amount) {gold -= amount;}
 
         //Victory Condition-Related:
         static int STAGE_VICTORY_CONDITION; //Hero_hunting, bloodbath, siege
@@ -35,5 +35,4 @@ class Stage
                 break;
             }
         };
-
 };

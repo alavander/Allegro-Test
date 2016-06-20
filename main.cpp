@@ -4,26 +4,29 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 #include <list>
+#include <string>
 #include <iostream>
+#include <typeinfo>
 /* Local Includes */
+#include "handler.h"
 #include "objects.h"
 #include "creature.h"
 #include "Const.h"
 #include "ftext.h"
 #include "stage.h"
 #include "squad.h"
+#include "deployment.h"
 
 /*
 Prototype-level ToDo:
 - Prevent Spawning Creatures on top of each other
 - Map camera control
--Unit types: Dwarf, Berserker(0%), Guardian, Hero
+-Unit types: Trooper, Berserker(0%), Knight, Hero
 -Enemies types: Troll(33%), Goblin(66%), Gnoll(33%), Ogre Leader
 - UI icons for creatures
 - Wrapping loading assess into functions/classes
 - Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
 - Implement smart attack range (based on creature size)
-- Made attack (dealing damage) done on the end of attack animation (done)
 
 Classes:
 - Implement Squad Class - responsible for holding stats, name, exp, inventory.
@@ -35,7 +38,6 @@ Alpha-level ToDo:
 - Writing/Loading from files (unit stats, save/load(serialization), player progress)
 - Sounds and music
 - Implement Resources(+gold bounty, +mana, +glory)
-- Deployment phase (different unit types)
 - Better combat (traits, special skills and different game mechanics)
 - Stages/game modes/introduction campaign
 */
@@ -43,9 +45,11 @@ Alpha-level ToDo:
 //GLOBALS
 //==============================================
 
+
 std::list<GameObject *> objects;
 std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
+
 int STATE = MENU;
 
 /* Stage variables */
@@ -139,20 +143,22 @@ int main(int argc, char **argv)
 //SQUAD HANDLING
 //==============================================
     stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
-    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage};
+    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay
     Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
     stats troop_stat = {10, 16, 2.2, 8};
-    animation troop_anim = {6, 8, 135, 105, 6,8, troopImage};
+    animation troop_anim = {6, 8, 135, 105, 6,12, troopImage};
     Squad *trooper = new Squad(DWARFKIN, troop_stat, troop_anim);
     stats goblin_stat = {8, 18, 2.5, 0};
     animation goblin_anim = {4,6,125,100,4,12,goblinImage};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
     stats troll_stat = {30, 175, 1.5, 0};
-    animation troll_anim = {8,6,125,115,8,6,trollImage};
+    animation troll_anim = {8,6,125,115,8,12,trollImage};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
     stats gnoll_stat = {14, 25, 2.2, 0};
-    animation gnoll_anim = {8,5,99,79,8,5,gnollImage};
+    animation gnoll_anim = {8,5,99,79,8,12,gnollImage};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
+
+    Deployment Deployed(trooper, goblin_pillager, gnoll_axeman);
 
 //==============================================
 //TIMER INIT AND STARTUP
@@ -198,8 +204,7 @@ int main(int argc, char **argv)
                 break;
             case ALLEGRO_KEY_SPACE:
                     if (STATE == MENU )
-                    {                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
-                objects.push_back(goblin);
+                    {
                     STATE = PLAYING;
                     break;
                     }
@@ -211,33 +216,15 @@ int main(int argc, char **argv)
                     }
                     else if (STATE == PLAYING)
                     {
-                        if (unit_selected == 1 && Stage::GetStageGold() > dwarf_enlist->GetGoldCost())
+                        int gold_cost = Deployed.GetSelectedSlot(unit_selected).GetGoldCost();
+                        if (Stage::GetStageGold() > gold_cost)
                             {
-                                Creature *dwarf = new Creature( 20, row_selected, *trooper);
-                                objects.push_back(dwarf);
-                                Stage::SpendGold(dwarf_enlist->GetGoldCost());
-                                Ftext *text = new Ftext(230, 325, -0.5, -10, 45, font18);
+                                objects.push_back(Deployed.SpawnUnit(row_selected, unit_selected));
+                                Stage::SpendGold(gold_cost);
+                                Ftext *text = new Ftext(230, 325, -0.5, -(gold_cost), 45, font18);
                                 objects.push_back(text);
                                 break;
                             }
-                        /*if (unit_selected == 2 && Stage::GetStageGold() > dwarf_berserker_stat[3])
-                            {
-                                Creature *dwarf = new Creature( 20, row_selected, dwarf_berserker_stat, 1, PLAYER, berserkerImage);
-                                objects.push_back(dwarf);
-                                Stage::SpendGold(dwarf_berserker_stat[3]);
-                                Ftext *text = new Ftext(230, 325, -0.5, -25, 45, font18);
-                                objects.push_back(text);
-                                break;
-                            }
-                        if (unit_selected == 3 && Stage::GetStageGold() > dwarf_lord_stat[3])
-                            {
-                                Creature *dwarf = new Creature( 20, row_selected, dwarf_lord_stat, 1, PLAYER, dwarfImage);
-                                objects.push_back(dwarf);
-                                Stage::SpendGold(dwarf_lord_stat[3]);
-                                Ftext *text = new Ftext(230, 325, -0.5, -40, 45, font18);
-                                objects.push_back(text);
-                                break;
-                            }*/
                     }
 		}
 		}
@@ -252,21 +239,21 @@ int main(int argc, char **argv)
             /*Enemy Spawning*/
             if((STATE == PLAYING) && rand() % 115 == 0)
             {
-                if (rand() % 10 == 0)
-                {
-                Creature *troll = new Creature(WIDTH-20, rand() % 3 + 1, *war_troll);
-                objects.push_back(troll);
-                }
-                else if (rand() % 3 == 0)
-                {
-                Creature *gnoll = new Creature(WIDTH-20, rand() % 3 + 1, *gnoll_axeman);
-                objects.push_back(gnoll);
-                }
-                else
-                {
-                Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
-                objects.push_back(goblin);
-                }
+               if (rand() % 10 == 0)
+               {
+               Creature *troll = new Creature(WIDTH-20, rand() % 3 + 1, *war_troll);
+               objects.push_back(troll);
+               }
+               else if (rand() % 3 == 0)
+               {
+               Creature *gnoll = new Creature(WIDTH-20, rand() % 3 + 1, *gnoll_axeman);
+               objects.push_back(gnoll);
+               }
+               else
+               {
+               Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
+               objects.push_back(goblin);
+               }
             }
 
             /*Gold Generation*/
@@ -274,7 +261,7 @@ int main(int argc, char **argv)
             Stage::AwardGold(0.04);
 
             /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
-            objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
+            //objects.sort([](GameObject * first, GameObject * second) {return first->GetY() < second->GetY();});
 
             /*Collision Checking*/
             if ( STATE == PLAYING || STATE == CUTSCENE)
@@ -348,9 +335,12 @@ int main(int argc, char **argv)
                   (*iter)->Render();
               }
 
-            al_draw_bitmap(dwarfImage, 490,320, 0 );
-            al_draw_tinted_bitmap(dwarfImage, al_map_rgb(180, 100, 100), 580, 320, 0);
-            al_draw_tinted_bitmap(dwarfImage, al_map_rgb(100, 200, 100), 660, 320, 0);
+            al_draw_bitmap_region(Deployed.OccupiedSlot_1->image, 0, 0,Deployed.OccupiedSlot_1->GetFrameWidth(),
+                                    Deployed.OccupiedSlot_1->GetFrameHeight(), 400,320, 0);
+            al_draw_bitmap_region(Deployed.OccupiedSlot_2->image, 0, 0,Deployed.OccupiedSlot_2->GetFrameWidth(),
+                                    Deployed.OccupiedSlot_2->GetFrameHeight(), 555,300, 0);
+            al_draw_bitmap_region(Deployed.OccupiedSlot_3->image, 0, 0,Deployed.OccupiedSlot_3->GetFrameWidth(),
+                                    Deployed.OccupiedSlot_3->GetFrameHeight(), 635,300, 0);
             al_draw_rectangle(404+unit_selected*90,325,463+unit_selected*90,383, al_map_rgb(255, 240, 0), 1);
             /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 146+row_selected*15, 0);
