@@ -89,3 +89,24 @@ bool GameObject::CollisionCheck(GameObject *otherObject)
     else if ( GetID() == ENEMY && otherObject->GetID() == PLAYER) return true;
     else return false;
 }
+
+    float GameObject::PositionY()
+    {
+    float PositionY;
+    int Lane = GetY();
+	switch(Lane)
+	{
+        case 1:
+        PositionY = LANE[1] - frameHeight;
+        return PositionY;
+        break;
+        case 2:
+        PositionY = LANE[2] - frameHeight;
+        return PositionY;
+        break;
+        case 3:
+        PositionY = LANE[3] - frameHeight;
+        return PositionY;
+        break;
+	}
+    }

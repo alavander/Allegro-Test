@@ -59,7 +59,7 @@ void Creature::Update()
 	if(GetID() == ENEMY && x < 0)
         Stage::DecreaseStageLive();
 
-	if(x < 0 || x > 800)
+	if(x < 0 || x > 1600)
 		SetAlive(false);
 }
 
@@ -69,15 +69,15 @@ void Creature::Render()
 
     if (GetID() == ENEMY)
     {
-    al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(225,0,0), 1);//Red Circle for Enemies
+    //al_draw_ellipse(x-Stage::cameraX, PositionY(), 24, 10,al_map_rgb(225,0,0), 1);//Red Circle for Enemies
 	al_draw_bitmap_region(image, curFrame * frameWidth, (ANIMATION*frameHeight), frameWidth, frameHeight,
-		x - frameWidth / 2, 175+y*15-frameHeight, ALLEGRO_FLIP_HORIZONTAL);
+		x - frameWidth / 2 -Stage::cameraX, PositionY(), ALLEGRO_FLIP_HORIZONTAL);
     }
     else
     {
-        al_draw_ellipse(x, 165+y*15, 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
+        //al_draw_ellipse(x-Stage::cameraX, PositionY(), 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
         al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
-		x - frameWidth / 2, 175+y*15-frameHeight, 0);
+		x - frameWidth / 2 -Stage::cameraX, PositionY(), 0);
     }
 }
 

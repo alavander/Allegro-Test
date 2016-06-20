@@ -41,6 +41,7 @@ public:
     /* Wyrzuciæ jako wspólny interface - combat? */
     void virtual GotHit(int dam);
     int virtual CheckAttack();
+    float PositionY();
 	/* */
 	void Init(float x, float y, float velX, int dirX, float VelY, int dirY);
 	/* */

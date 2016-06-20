@@ -32,4 +32,5 @@ public:
     int GetType() {return UNIT_TYPE;}
     void LoseLife(int hp) {Creature::hp -= hp;}
 
+
 };

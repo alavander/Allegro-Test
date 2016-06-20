@@ -9,9 +9,10 @@ class Ftext : public GameObject
 
     protected:
         ALLEGRO_FONT *font;
+        ALLEGRO_BITMAP *image;
 
     public:
-        Ftext(float x, float y, float velY, int display, int duration, ALLEGRO_FONT *font);
+        Ftext(float x, float y, float velY, int display, int duration, ALLEGRO_FONT *font, ALLEGRO_BITMAP *image);
         void Destroy();
         void Update();
         void Render();

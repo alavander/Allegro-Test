@@ -12,6 +12,7 @@ class Stage
         static int GetStageGold() {return gold;}
         static void AwardGold(float amount) {gold += amount;}
         static void SpendGold(float amount) {gold -= amount;}
+        static int cameraX;
 
         //Victory Condition-Related:
         static int STAGE_VICTORY_CONDITION; //Hero_hunting, bloodbath, siege
@@ -33,6 +34,8 @@ class Stage
                 if (obj_count >= 20) return true;
                 else return false;
                 break;
+                default:
+                return false;
             }
         };
 };

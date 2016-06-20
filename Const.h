@@ -1,9 +1,12 @@
 #pragma once
-const int WIDTH = 800;
-const int HEIGHT = 400;
+const int SCREEN_WIDTH = 800;
+const int WORLD_WIDTH = 1600;
+const int HEIGHT = 600;
+const float LANE[] = {NULL,450,470,490};
 
 enum ID{PLAYER, ENEMY, MISC}; //IDs
-enum STATE{PLAYING, PAUSED, MENU, DEFEAT, CUTSCENE}; // States
+enum STATE{PLAYING, PAUSED, MENU, DEFEAT, DEPLOYMENT}; // States
 enum STAGE_VICTORY_CONDITION{HERO_HUNTING, BLOODBATH, SIEGE}; //victory conditions
 enum FRACTION{DWARFKIN, GREENSKINS};
 enum ANIMATION{WALKING, ATTACKING, DYING};
+

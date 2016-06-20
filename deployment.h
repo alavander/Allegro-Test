@@ -28,7 +28,7 @@ class Deployment
         Squad * OccupiedSlot_2;
         Squad * OccupiedSlot_3;
         GameObject * SpawnUnit(int Selected_Row, int Selected_Slot);
-        Squad GetSelectedSlot(int slot);
+        Squad GetSelectedSlot(int slot);//Aktualnie wybrany slot unita, do pobierania danych
         //void SelectSquadForDeployment(Squad SelectedSquad, int Slot);
 
         //int Deployment(int DifficulityMultiplier); //glowna petla deploymentu
