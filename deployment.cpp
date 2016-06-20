@@ -13,19 +13,19 @@ GameObject * Deployment::SpawnUnit(int Selected_Row, int Selected_Slot)
     {
         case 1:
         {
-        Creature *unit = new Creature( 20, Selected_Row, *OccupiedSlot_1 );
+        Creature *unit = new Creature( 20, Selected_Row, OccupiedSlot_1 );
         return unit;
         break;
         }
         case 2:
         {
-        Creature *unit = new Creature( 20, Selected_Row, *OccupiedSlot_2 );
+        Creature *unit = new Creature( 20, Selected_Row, OccupiedSlot_2 );
         return unit;
         break;
         }
         case 3:
         {
-        Creature *unit = new Creature( 20, Selected_Row, *OccupiedSlot_3 );
+        Creature *unit = new Creature( 20, Selected_Row, OccupiedSlot_3 );
         return unit;
         break;
         }

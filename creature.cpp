@@ -2,23 +2,23 @@
 
 
 
-Creature::Creature(float x, float y, Squad squad_name)
+Creature::Creature(float x, float y, Squad *squad_name)
 {
-    Creature::ptr_to_squad = &squad_name;
+    Creature::ptr_to_squad = &*squad_name;
     //Initializing and stats
-	GameObject::Init(x, y, squad_name.GetSpeed(), squad_name.GetFraction() == DWARFKIN ? 1 : -1 , 0, 0);
-	GameObject::SetID(squad_name.GetFraction() == DWARFKIN ? PLAYER : ENEMY);
+	GameObject::Init(x, y, squad_name->GetSpeed(), squad_name->GetFraction() == DWARFKIN ? 1 : -1 , 0, 0);
+	GameObject::SetID(squad_name->GetFraction() == DWARFKIN ? PLAYER : ENEMY);
 	GameObject::SetAnim(0);
-    Creature::damage = squad_name.GetDamage();
-    Creature::hp = squad_name.GetHp();
+    Creature::damage = squad_name->GetDamage();
+    Creature::hp = squad_name->GetHp();
 	//Animation
-	Creature::image = squad_name.image;
-	Creature::maxFrame = squad_name.GetMaxFrame();
-	Creature::frameDelay = squad_name.GetFrameDelay();
-	Creature::frameWidth = squad_name.GetFrameWidth();
-	Creature::frameHeight = squad_name.GetFrameHeight();
-	Creature::animationColumns = squad_name.GetAnimationColumns();
-	Creature::attackDelay = squad_name.GetAttackDelay();
+	Creature::image = squad_name->image;
+	Creature::maxFrame = squad_name->GetMaxFrame();
+	Creature::frameDelay = squad_name->GetFrameDelay();
+	Creature::frameWidth = squad_name->GetFrameWidth();
+	Creature::frameHeight = squad_name->GetFrameHeight();
+	Creature::animationColumns = squad_name->GetAnimationColumns();
+	Creature::attackDelay = squad_name->GetAttackDelay();
 	Creature::curFrame = 0;
 	Creature::frameCount = 0;
     Creature::attack_cooldown = attackDelay*animationColumns;

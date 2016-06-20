@@ -8,7 +8,6 @@
 #include <iostream>
 #include <typeinfo>
 /* Local Includes */
-#include "handler.h"
 #include "objects.h"
 #include "creature.h"
 #include "Const.h"
@@ -241,17 +240,17 @@ int main(int argc, char **argv)
             {
                if (rand() % 10 == 0)
                {
-               Creature *troll = new Creature(WIDTH-20, rand() % 3 + 1, *war_troll);
+               Creature *troll = new Creature(WIDTH-20, rand() % 3 + 1, war_troll);
                objects.push_back(troll);
                }
                else if (rand() % 3 == 0)
                {
-               Creature *gnoll = new Creature(WIDTH-20, rand() % 3 + 1, *gnoll_axeman);
+               Creature *gnoll = new Creature(WIDTH-20, rand() % 3 + 1, gnoll_axeman);
                objects.push_back(gnoll);
                }
                else
                {
-               Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, *goblin_pillager);
+               Creature *goblin = new Creature(WIDTH-20, rand() % 3 + 1, goblin_pillager);
                objects.push_back(goblin);
                }
             }

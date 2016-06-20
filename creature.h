@@ -14,7 +14,7 @@ protected:
 
 
 public:
-	Creature(float x, float y, Squad squad_name);
+	Creature(float x, float y, Squad *squad_name);
     Squad *ptr_to_squad;
 	void Destroy();
 	void Update();
