@@ -1,5 +1,6 @@
 #pragma once
 #include <allegro5/allegro5.h>
+#include <string>
 
 struct stats
 {
@@ -18,6 +19,7 @@ struct animation
 	int animationColumns;
 	int attackDelay;
 	ALLEGRO_BITMAP *image;
+	int icon_number;
 };
 
 class Squad
@@ -26,6 +28,7 @@ class Squad
         int level;                  //Poziom jednostki
         float experience;           //Punkty doswiadczenia ktore ma jednostka
         int gold_cost;              //Ile zlota kosztuje przywolanie jednej jednostki
+        int FRACTION;
         //Taken from stats
         int damage;                 //Obrazenia ktore zadaje jednostka
         int hp;                     //Ilosc pkt zycia ktore posiada jednostka
@@ -37,7 +40,9 @@ class Squad
         int frameHeight;
         int animationColumns;
         int attackDelay;
-        int FRACTION;
+        int icon_number;
+
+
         //int unit_number;          //Aktualny stan osobowy squadu
         //int max_unit_number;      //Maksymalny stan osobowy squadu
         //float squad_reinforce;    //Ile unitow przybywa miedzy misjami
@@ -63,6 +68,7 @@ class Squad
         int GetAnimationColumns() {return animationColumns;}
         int GetFraction() {return FRACTION;}
         int GetAttackDelay() {return attackDelay;}
+        int GetIconNumber() {return icon_number;}
 
         //Other:
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.

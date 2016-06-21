@@ -17,20 +17,28 @@
 
 /*
 Prototype-level ToDo:
+- Remove copy-by-value for stats/anim struct to squad
 - Prevent Spawning Creatures on top of each other
-- Map camera control (50%)
--Unit types: Trooper, Berserker(0%), Knight, Hero
+-Unit types: Soldier, Berserker, Knight, Hero
 -Enemies types: Troll(33%), Goblin(66%), Gnoll(33%), Ogre Leader
-- UI icons for creatures
-- Wrapping loading assess into functions/classes
+- UI icons for creatures (50% done - need to show squad name and gold cost)
+- Add 'Honor' resource, gained by killing enemies
+- Add troop type (common, uncommon, elite, hero)
+- floating damage text - affected by camera.
+
+Code-tidying:
+- Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
 - Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
-- Implement smart attack range (based on creature size)
+- Make separate State class, for keeping game state.
+- Make separate Input class, for dealing with input
+
 
 Classes:
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
     select units and hero for the next mission.
 
 Alpha-level ToDo:
+- Add ranged attack options
 - Writing/Loading from files (unit stats, save/load(serialization), player progress)
 - Sounds and music
 - Implement Resources(+gold bounty, +mana, +glory)
@@ -58,6 +66,8 @@ float Stage::gold = 100;
 /* GUI variables */
 int row_selected = 1;
 int unit_selected = 1;
+bool cameraLeft = false;
+bool cameraRight = false;
 
 /* Game Loop Functions */
 void Remove_dead_objects(); //Usuwa martwe obiekty z listy
@@ -87,6 +97,7 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *heartIcon = NULL;
 	ALLEGRO_BITMAP *gold_icon = NULL;
 	ALLEGRO_BITMAP *attack_icon = NULL;
+	ALLEGRO_BITMAP *unit_icon = NULL;
 
 //==============================================
 //ALLEGRO VARIABLES
@@ -131,6 +142,7 @@ int main(int argc, char **argv)
 	al_convert_mask_to_alpha(hand, al_map_rgb(255,0,0));
 	gold_icon = al_load_bitmap("Data/gold_icon.png");
 	attack_icon = al_load_bitmap("Data/attack_icon.png");
+	unit_icon = al_load_bitmap("Data/unit_icons_40x40.jpg");
 	/*Jednostki*/
 	troopImage = al_load_bitmap("Data/units/trooper.png");
 	dwarfImage = al_load_bitmap("Data/units/DwarfWarrior.png");
@@ -144,19 +156,19 @@ int main(int argc, char **argv)
 //SQUAD HANDLING
 //==============================================
     stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
-    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay
+    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage, 0}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay
     Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
     stats troop_stat = {10, 16, 2.2, 8};
-    animation troop_anim = {6, 8, 135, 105, 6,12, troopImage};
+    animation troop_anim = {6, 8, 135, 105, 6,12, troopImage,1};
     Squad *trooper = new Squad(DWARFKIN, troop_stat, troop_anim);
     stats goblin_stat = {8, 18, 2.5, 0};
-    animation goblin_anim = {4,6,125,100,4,12,goblinImage};
+    animation goblin_anim = {4,6,125,100,4,12,goblinImage,0};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
     stats troll_stat = {30, 175, 1.5, 0};
-    animation troll_anim = {8,6,125,115,8,12,trollImage};
+    animation troll_anim = {8,6,125,115,8,12,trollImage,0};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
     stats gnoll_stat = {14, 25, 2.2, 0};
-    animation gnoll_anim = {8,5,99,79,8,12,gnollImage};
+    animation gnoll_anim = {8,5,99,79,8,12,gnollImage,0};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
 
     Deployment Deployed(trooper, goblin_pillager, gnoll_axeman);
@@ -198,10 +210,12 @@ int main(int argc, char **argv)
                 if (row_selected < 3 ) row_selected += 1;
 				break;
             case ALLEGRO_KEY_LEFT:
-                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 50);
+                //if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 50);
+                cameraLeft = true;
                 break;
             case ALLEGRO_KEY_RIGHT:
-                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 50);
+                cameraRight = true;
+                //if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 50);
                 break;
             case ALLEGRO_KEY_1:
                 unit_selected = 1;
@@ -238,6 +252,18 @@ int main(int argc, char **argv)
                     }
 		}
 		}
+		if(ev.type == ALLEGRO_EVENT_KEY_UP)
+		{
+			switch(ev.keyboard.keycode)
+			{
+            case ALLEGRO_KEY_LEFT:
+                cameraLeft = false;
+                break;
+            case ALLEGRO_KEY_RIGHT:
+                cameraRight = false;
+                break;
+            }
+        }
 		//==============================================
 		//GAME UPDATE
 		//==============================================
@@ -265,6 +291,13 @@ int main(int argc, char **argv)
                objects.push_back(goblin);
                }
             }
+
+            /*Camera*/
+            if (cameraLeft == true)
+                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 5);
+            if (cameraRight == true)
+                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 5);
+
 
             /*Gold Generation*/
             if(STATE == PLAYING)
@@ -345,12 +378,10 @@ int main(int argc, char **argv)
                   (*iter)->Render();
               }
             //Icons!
-           // al_draw_bitmap_region(Deployed.OccupiedSlot_1->image, 0, 0,Deployed.OccupiedSlot_1->GetFrameWidth(),
-           //                         Deployed.OccupiedSlot_1->GetFrameHeight(), 400,320, 0);
-           // al_draw_bitmap_region(Deployed.OccupiedSlot_2->image, 0, 0,Deployed.OccupiedSlot_2->GetFrameWidth(),
-           //                         Deployed.OccupiedSlot_2->GetFrameHeight(), 555,300, 0);
-            //al_draw_bitmap_region(Deployed.OccupiedSlot_3->image, 0, 0,Deployed.OccupiedSlot_3->GetFrameWidth(),
-           //                         Deployed.OccupiedSlot_3->GetFrameHeight(), 635,300, 0);
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 400,560, 0);
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 500,560, 0);
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 600,560, 0);
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 700,560, 0);
             //al_draw_rectangle(404+unit_selected*90,325,463+unit_selected*90,383, al_map_rgb(255, 240, 0), 1);
             /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 410+row_selected*20, 0);
@@ -398,6 +429,7 @@ int main(int argc, char **argv)
 	al_destroy_bitmap(heartIcon);
 	al_destroy_bitmap(attack_icon);
     al_destroy_bitmap(gold_icon);
+    al_destroy_bitmap(unit_icon);
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);
