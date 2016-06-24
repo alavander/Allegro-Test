@@ -54,6 +54,23 @@ void Creature::Update()
 		frameCount = 0;
 	}
 	break;
+    case DYING:
+    {
+    if (IfIsDying() == false)
+    {
+        curFrame = 0;
+        frameCount = 0;
+        SetDying(true);
+    }
+	if(++frameCount >= frameDelay)
+	{
+		curFrame++;
+		if(curFrame >= maxFrame)
+        if (GetID() == ENEMY) Stage::ObjectivesCount++;
+		SetAlive(false);
+    }
+	break;
+    }
     }
 
 	if(GetID() == ENEMY && x < 0)
@@ -76,7 +93,7 @@ void Creature::Render()
     else
     {
         //al_draw_ellipse(x-Stage::cameraX, PositionY(), 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
-        al_draw_bitmap_region(image, curFrame * frameWidth, 0, frameWidth, frameHeight,
+        al_draw_bitmap_region(image, curFrame * frameWidth, (ANIMATION*frameHeight), frameWidth, frameHeight,
 		x - frameWidth / 2 -Stage::cameraX, PositionY(), 0);
     }
 }
@@ -99,10 +116,6 @@ void Creature::Render()
     void Creature::GotHit(int dam)
     {
         LoseLife(dam);
-        int hp = GetHp();
-        if (hp < 1)
-        {
-        SetAlive(false);
-        if (GetID() == ENEMY) Stage::ObjectivesCount++;
-        }
+        if (GetHp() < 1)
+    		SetAlive(false);
     }

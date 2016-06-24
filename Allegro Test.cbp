@@ -75,11 +75,16 @@
 		<Unit filename="Const.h" />
 		<Unit filename="creature.cpp" />
 		<Unit filename="creature.h" />
+		<Unit filename="deployment.cpp" />
+		<Unit filename="deployment.h" />
 		<Unit filename="ftext.cpp" />
 		<Unit filename="ftext.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="objects.cpp" />
 		<Unit filename="objects.h" />
+		<Unit filename="squad.cpp" />
+		<Unit filename="squad.h" />
+		<Unit filename="stage.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

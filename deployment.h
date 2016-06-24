@@ -12,7 +12,6 @@ class Deployment
         //int StageMapPosition[6]; //trzyma x,y,x,y,x,y na mapie trzech wygenerowanych stageow by pokazac zaznaczenie.
         //int SquadListPosition[];
         //std::list<Squad*> AvailableSquads;
-        //int DeploymentSlot_1, DeploymentSlot_2, DeploymentSlot_3;
 
         //utworz druzyne z posrod dostepnych
         //druzyny wybrane na nastepna mape

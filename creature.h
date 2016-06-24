@@ -9,7 +9,7 @@ class Creature : public GameObject
 {
 private:
     int damage, hp, attack_cooldown, attackDelay, UNIT_TYPE;
-
+    bool isDying;
 protected:
 
 
@@ -24,7 +24,8 @@ public:
     void GotHit(int dam);
     int CheckAttack();
 
-    //Attack functions
+    bool IfIsDying() {return isDying;}
+    bool SetDying(bool isDying) {Creature::isDying = isDying;}
     int GetCooldown() {return attack_cooldown;}
     void SetCooldown(int attack_cooldown) {Creature::attack_cooldown = attack_cooldown;}
     int GetAttackValue() {return damage;}

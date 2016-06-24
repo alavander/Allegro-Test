@@ -17,14 +17,17 @@
 
 /*
 Prototype-level ToDo:
-- Remove copy-by-value for stats/anim struct to squad
-- Prevent Spawning Creatures on top of each other
--Unit types: Soldier, Berserker, Knight, Hero
--Enemies types: Troll(33%), Goblin(66%), Gnoll(33%), Ogre Leader
-- UI icons for creatures (50% done - need to show squad name and gold cost)
-- Add 'Honor' resource, gained by killing enemies
-- Add troop type (common, uncommon, elite, hero)
-- floating damage text - affected by camera.
+- Attack speed should be a separate variable, and based on it, animations should be faster or slower.
+- After attack there should be a short 'cooldown' period.
+- Add death animation rendering and game logic handling.
+-Unit types: Berserker, Knight, Hero
+-Enemies types: Ogre Leader
+- UI icons for creatures (50% done - need to show squad name and gold/honor cost)
+- Add 'Honor' resource, gained by killing enemies (50%)
+- Add 'Honor' icon and floating text upon killing enemy.
+- Add troop type (common, uncommon, elite, hero) (50%)
+- Basic squad selection at startup.
+- Random game type at startup.
 
 Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
@@ -38,6 +41,7 @@ Classes:
     select units and hero for the next mission.
 
 Alpha-level ToDo:
+- Remove copy-by-value for stats/anim struct to squad
 - Add ranged attack options
 - Writing/Loading from files (unit stats, save/load(serialization), player progress)
 - Sounds and music
@@ -85,8 +89,8 @@ int main(int argc, char **argv)
 //==============================================
 //PROJECT VARIABLES
 //==============================================
-    ALLEGRO_BITMAP *troopImage = NULL;
-	ALLEGRO_BITMAP *dwarfImage = NULL;
+    ALLEGRO_BITMAP *soldierImage = NULL;
+	ALLEGRO_BITMAP *barbarianImage = NULL;
 	ALLEGRO_BITMAP *goblinImage = NULL;
 	ALLEGRO_BITMAP *trollImage = NULL;
 	ALLEGRO_BITMAP *gnollImage = NULL;
@@ -98,6 +102,7 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *gold_icon = NULL;
 	ALLEGRO_BITMAP *attack_icon = NULL;
 	ALLEGRO_BITMAP *unit_icon = NULL;
+	ALLEGRO_BITMAP *deployment_map = NULL;
 
 //==============================================
 //ALLEGRO VARIABLES
@@ -143,35 +148,33 @@ int main(int argc, char **argv)
 	gold_icon = al_load_bitmap("Data/gold_icon.png");
 	attack_icon = al_load_bitmap("Data/attack_icon.png");
 	unit_icon = al_load_bitmap("Data/unit_icons_40x40.jpg");
+	deployment_map = al_load_bitmap("Data/world_map.jpg");
 	/*Jednostki*/
-	troopImage = al_load_bitmap("Data/units/trooper.png");
-	dwarfImage = al_load_bitmap("Data/units/DwarfWarrior.png");
-	al_convert_mask_to_alpha(dwarfImage, al_map_rgb(255,255,255));
-	goblinImage = al_load_bitmap("Data/units/GoblinPillager.png");
-	trollImage = al_load_bitmap("Data/units/TrollLeader.png");
-	al_convert_mask_to_alpha(trollImage, al_map_rgb(255,0,0));
-	gnollImage = al_load_bitmap("Data/units/GnollAxeman.png");
-	al_convert_mask_to_alpha(gnollImage, al_map_rgb(255,0,0));
+	soldierImage = al_load_bitmap("Data/units/soldier.png");
+	barbarianImage = al_load_bitmap("Data/units/barbarian.png");
+	goblinImage = al_load_bitmap("Data/units/goblin_pillager.png");
+	trollImage = al_load_bitmap("Data/units/troll.png");
+	gnollImage = al_load_bitmap("Data/units/gnoll_axeman.png");
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats dwarf_stat = {12, 35, 1.8, 10};//DMG/HP/SPD/COST
-    animation dwarf_anim = {0,0,0,0,0,0,dwarfImage, 0}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay
-    Squad *dwarf_enlist = new Squad(DWARFKIN, dwarf_stat, dwarf_anim);
-    stats troop_stat = {10, 16, 2.2, 8};
-    animation troop_anim = {6, 8, 135, 105, 6,12, troopImage,1};
-    Squad *trooper = new Squad(DWARFKIN, troop_stat, troop_anim);
+    stats barbarian_stat = {19, 35, 1.7, 18};//DMG/HP/SPD/COST
+    animation barbarian_anim = {6,6,120,100,9,10,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
+    Squad *barbarian = new Squad(DWARFKIN, barbarian_stat, barbarian_anim);
+    stats soldier_stat = {11, 21, 2.2, 10};
+    animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
+    Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
     stats goblin_stat = {8, 18, 2.5, 0};
-    animation goblin_anim = {4,6,125,100,4,12,goblinImage,0};
+    animation goblin_anim = {4,6,125,100,4,15,goblinImage,0};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
     stats troll_stat = {30, 175, 1.5, 0};
-    animation troll_anim = {8,6,125,115,8,12,trollImage,0};
+    animation troll_anim = {8,6,250,200,8,18,trollImage,0};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
     stats gnoll_stat = {14, 25, 2.2, 0};
-    animation gnoll_anim = {8,5,99,79,8,12,gnollImage,0};
+    animation gnoll_anim = {8,5,220,175,8,12,gnollImage,0};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
 
-    Deployment Deployed(trooper, goblin_pillager, gnoll_axeman);
+    Deployment Deployed(soldier, barbarian, gnoll_axeman);
 
 //==============================================
 //TIMER INIT AND STARTUP
@@ -210,12 +213,10 @@ int main(int argc, char **argv)
                 if (row_selected < 3 ) row_selected += 1;
 				break;
             case ALLEGRO_KEY_LEFT:
-                //if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 50);
                 cameraLeft = true;
                 break;
             case ALLEGRO_KEY_RIGHT:
                 cameraRight = true;
-                //if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 50);
                 break;
             case ALLEGRO_KEY_1:
                 unit_selected = 1;
@@ -226,8 +227,16 @@ int main(int argc, char **argv)
             case ALLEGRO_KEY_3:
                 unit_selected = 3;
                 break;
+            case ALLEGRO_KEY_4:
+                unit_selected = 4;
+                break;
             case ALLEGRO_KEY_SPACE:
                     if (STATE == MENU )
+                    {
+                    STATE = DEPLOYMENT;
+                    break;
+                    }
+                    if (STATE == DEPLOYMENT )
                     {
                     STATE = PLAYING;
                     break;
@@ -368,6 +377,16 @@ int main(int argc, char **argv)
             al_draw_bitmap(titleScreen, 0, 0, 0);
             al_draw_text(font18, al_map_rgb(255, 255, 255), 400, 350, ALLEGRO_ALIGN_CENTRE , "Press spacebar to start");
             }
+            if (STATE == DEPLOYMENT)
+            {
+            al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//t³o
+            al_draw_text(font18, al_map_rgb(255,255,255), 215, 5, ALLEGRO_ALIGN_CENTER, "Map" );
+            al_draw_bitmap(deployment_map,30,30,0);
+            al_draw_text(font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
+            al_draw_filled_rectangle(460, 30, 750, 330, al_map_rgb(255,255,255));//squad selection
+            al_draw_filled_rectangle(600, 500, 750, 530, al_map_rgb(255,255,255));//start button
+            al_draw_text(font18, al_map_rgb(0,0,0), (600+750)/2, 505, ALLEGRO_ALIGN_CENTER, "Start Mission" );
+            }
 			if (STATE == PLAYING || STATE == PAUSED )
             {
             al_draw_bitmap_region(bgImage, 0+Stage::cameraX, 0, SCREEN_WIDTH, HEIGHT, 0, 0, 0);
@@ -382,7 +401,7 @@ int main(int argc, char **argv)
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 500,560, 0);
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 600,560, 0);
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 700,560, 0);
-            //al_draw_rectangle(404+unit_selected*90,325,463+unit_selected*90,383, al_map_rgb(255, 240, 0), 1);
+            al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
             /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 410+row_selected*20, 0);
             /* UI text */
@@ -417,8 +436,8 @@ int main(int argc, char **argv)
 		delete (*iter);
 		iter = objects.erase(iter);
 	}
-    al_destroy_bitmap(troopImage);
-	al_destroy_bitmap(dwarfImage);
+    al_destroy_bitmap(soldierImage);
+	al_destroy_bitmap(barbarianImage);
 	al_destroy_bitmap(goblinImage);
 	al_destroy_bitmap(trollImage);
 	al_destroy_bitmap(gnollImage);
@@ -430,6 +449,7 @@ int main(int argc, char **argv)
 	al_destroy_bitmap(attack_icon);
     al_destroy_bitmap(gold_icon);
     al_destroy_bitmap(unit_icon);
+    al_destroy_bitmap(deployment_map);
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);
@@ -437,8 +457,8 @@ int main(int argc, char **argv)
 	al_destroy_event_queue(event_queue);
 	al_destroy_display(display);
 
-    delete dwarf_enlist;
-    delete trooper;
+    delete barbarian;
+    delete soldier;
     delete goblin_pillager;
     delete war_troll;
     delete gnoll_axeman;

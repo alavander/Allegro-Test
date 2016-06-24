@@ -63,7 +63,7 @@ public:
 	bool GetAlive() {return alive;}
 	bool GetSolid() {return solid;}
 	bool CanMove() {return movable;}
-	bool GetAnimation() {return ANIMATION;}
+	int GetAnimation() {return ANIMATION;}
 
 	/* Wyrzuciæ jako wspólny interface - Range/Collisions? */
 	bool CollisionCheck(GameObject *otherObject);

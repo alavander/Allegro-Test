@@ -32,5 +32,5 @@ void Ftext::Render()
 {
   al_draw_textf(font, al_map_rgb(255, 255, 255), x, y, ALLEGRO_ALIGN_CENTRE , "%i", display);
   if (image != NULL)
-    al_draw_bitmap(image, x+10, y+10, 0);
+    al_draw_bitmap(image, x+12, y+10, 0);
 }

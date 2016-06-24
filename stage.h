@@ -12,6 +12,12 @@ class Stage
         static int GetStageGold() {return gold;}
         static void AwardGold(float amount) {gold += amount;}
         static void SpendGold(float amount) {gold -= amount;}
+        /* Honor related */
+        static float honor;
+        static int GetStageHonor() {return honor;}
+        static void AwardHonor(float amount) {honor += amount;}
+        static void SpendHonor(float amount) {honor -= amount;}
+
         static int cameraX;
 
         //Victory Condition-Related:
