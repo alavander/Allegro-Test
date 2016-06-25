@@ -33,7 +33,8 @@ Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
 - Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
 - Make separate State class, for keeping game state.
-- Make separate Input class, for dealing with input
+- Make separate Input class, for dealing with input.
+- Make separate Unit State class, for dealing with animation changes.
 
 
 Classes:
@@ -319,8 +320,7 @@ int main(int argc, char **argv)
             if ( STATE == PLAYING)
             for(iter = objects.begin(); iter != objects.end(); ++iter)
             {
-                if ( !(*iter)->GetAlive() || !(*iter)->GetSolid()) continue;
-                (*iter)->SetAnim(WALKING);
+                if ( !(*iter)->GetAlive() || !(*iter)->GetSolid())continue;
                 for(iter2 = objects.begin(); iter2 != objects.end(); ++iter2)
                 {
                     if( !(*iter2)->GetAlive() || (*iter2) == (*iter) || !(*iter2)->GetSolid())  continue;
@@ -333,7 +333,7 @@ int main(int argc, char **argv)
                                 if (damage > 0 )
                                 {
                                 (*iter2)->GotHit(damage);
-                                Ftext *text = new Ftext(((*iter2)->GetX()-Stage::cameraX), (*iter2)->PositionY()+10, 0.7, damage, 45, font18, attack_icon);
+                                Ftext *text = new Ftext(((*iter2)->GetX()-Stage::cameraX), (*iter2)->PositionY(), 0.7, damage, 45, font18, attack_icon);
                                 objects.push_back(text);
                                 }
                             }
@@ -347,7 +347,6 @@ int main(int argc, char **argv)
                      if ( !(*iter)->GetAlive()) continue;
                      {
                         (*iter)->Update();
-                        (*iter)->SetMove(true);
                      }
                 }
 

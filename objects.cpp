@@ -60,6 +60,10 @@ int GameObject::CheckAttack()
 { //virtual
 }
 
+void GameObject::ChangeState(int newState)
+{ //virtual
+}
+
 bool GameObject::CollisionCheck(GameObject *otherObject)
 {
 	float oX = otherObject->GetX();

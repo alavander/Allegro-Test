@@ -22,6 +22,8 @@ Creature::Creature(float x, float y, Squad *squad_name)
 	Creature::curFrame = 0;
 	Creature::frameCount = 0;
     Creature::attack_cooldown = attackDelay*animationColumns;
+    Creature::isDying = false;
+    Creature::isAttacking = false;
 }
 
 void Creature::Destroy()
@@ -33,10 +35,14 @@ void Creature::Update()
 {
 	GameObject::Update();
 
+	if (IfIsDying() == true) ChangeState(DYING); //Sprawdzamy czy umiera
+	else if (IfIsAttacking() == true) ChangeState(ATTACKING); //Jesli nie umiera, to sprawdzamy czy atakuje
+	else if (CanMove() == true) ChangeState(WALKING); //Jesli ani nie umiera, ani nie atakuje, to sprawdzamy czy moze isc
+
     switch(ANIMATION)
     {
     case WALKING:
-    if(CanMove())
+    if(CanMove())//Updatujemy animacje tylko jesli moze isc.
 	if(++frameCount >= frameDelay)
 	{
 		curFrame++;
@@ -55,22 +61,17 @@ void Creature::Update()
 	}
 	break;
     case DYING:
-    {
-    if (IfIsDying() == false)
-    {
-        curFrame = 0;
-        frameCount = 0;
-        SetDying(true);
-    }
 	if(++frameCount >= frameDelay)
 	{
 		curFrame++;
 		if(curFrame >= maxFrame)
-        if (GetID() == ENEMY) Stage::ObjectivesCount++;
+		{
+            if (GetID() == ENEMY) Stage::ObjectivesCount++;
 		SetAlive(false);
+		}
+        frameCount = 0;
     }
 	break;
-    }
     }
 
 	if(GetID() == ENEMY && x < 0)
@@ -78,6 +79,9 @@ void Creature::Update()
 
 	if(x < 0 || x > 1600)
 		SetAlive(false);
+
+    	SetMove(true); //Defaulotowo przyjmujemy, ze moze chodzic
+    	SetAttacking(false); //Defaultowo przyjmujemy, ze nie atakuje
 }
 
 void Creature::Render()
@@ -100,7 +104,9 @@ void Creature::Render()
 
 	int Creature::CheckAttack()
 	{
-        SetAnim(ATTACKING);
+        if(!IfIsDying())
+        {
+        SetAttacking(true);
 	    if (GetCooldown() > 0)
         {
         SetCooldown(GetCooldown()-1);
@@ -111,11 +117,47 @@ void Creature::Render()
         SetCooldown(attackDelay*animationColumns);
         return GetAttackValue()/2 + rand() % GetAttackValue()/2;
         }
+        }
 	}
 
     void Creature::GotHit(int dam)
     {
+        if(!IfIsDying())
+        {
         LoseLife(dam);
         if (GetHp() < 1)
-    		SetAlive(false);
+    		SetDying(true);
+        }
+    }
+
+    void Creature::ChangeState(int newState)
+    {
+        int state = GetAnimation();
+        if (state != newState)
+        {
+            switch(newState)
+            {
+                case WALKING:
+                {
+                SetAnim(WALKING);
+                curFrame = 0;
+                frameCount = 0;
+                break;
+                }
+                case ATTACKING:
+                {
+                SetAnim(ATTACKING);
+                curFrame = 0;
+                frameCount = 0;
+                break;
+                }
+                case DYING:
+                {
+                SetAnim(DYING);
+                curFrame = 0;
+                frameCount = 0;
+                break;
+                }
+            }
+        }
     }

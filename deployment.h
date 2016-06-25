@@ -6,7 +6,6 @@
 class Deployment
 {
     private:
-        //ALLEGRO_IMAGE *Mission_Map = NULL;
         //std::list<Stage*> PreGeneratedStageList;
         //Stage *PtrToSelectedStage;
         //int StageMapPosition[6]; //trzyma x,y,x,y,x,y na mapie trzech wygenerowanych stageow by pokazac zaznaczenie.
