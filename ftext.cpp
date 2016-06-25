@@ -30,8 +30,8 @@ void Ftext::Update()
 
 void Ftext::Render()
 {
-  int lenght = (abs(display) > 99 ? 17 : abs(display) > 9 ? 13 : 9);
+  int lenght = (abs(display) > 99 ? 22 : abs(display) > 9 ? 18 : 12);
   al_draw_textf(font, al_map_rgb(255, 255, 255), x, y, ALLEGRO_ALIGN_CENTRE , "%i", display);
   if (image != NULL)
-    al_draw_bitmap(image, x+lenght, y+10, 0);
+    al_draw_bitmap(image, x+lenght, y+3, 0);
 }

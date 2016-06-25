@@ -18,6 +18,17 @@ class Stage
         static void AwardHonor(float amount) {honor += amount;}
         static void SpendHonor(float amount) {honor -= amount;}
 
+        /*Enemies count*/
+        static int rareNumber;
+        static int uncommonNumber;
+        static int GetRareNumber() {return rareNumber;}
+        static void DecreaseRareNumber() {rareNumber--;}
+        static void IncreaseRareNumber() {rareNumber++;}
+        static int GetUncommonNumber() {return uncommonNumber;}
+        static void DecreaseUncommonNumber() {uncommonNumber--;}
+        static void IncreaseUncommonNumber() {uncommonNumber++;}
+
+
         static int cameraX;
 
         //Victory Condition-Related:

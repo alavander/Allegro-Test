@@ -11,6 +11,7 @@ Creature::Creature(float x, float y, Squad *squad_name)
 	GameObject::SetAnim(0);
     Creature::damage = squad_name->GetDamage();
     Creature::hp = squad_name->GetHp();
+    Creature::UNIT_TYPE = squad_name->GetUnitType();
 	//Animation
 	Creature::image = squad_name->image;
 	Creature::maxFrame = squad_name->GetMaxFrame();
@@ -24,6 +25,9 @@ Creature::Creature(float x, float y, Squad *squad_name)
     Creature::attack_cooldown = attackDelay*animationColumns;
     Creature::isDying = false;
     Creature::isAttacking = false;
+    //Increasing the enemy type counts, to prevent spawning too much of strong creatures
+    if( GetID() == ENEMY && GetUnitType() == RARE) Stage::IncreaseRareNumber();
+    if( GetID() == ENEMY && GetUnitType() == UNCOMMON) Stage::IncreaseUncommonNumber();
 }
 
 void Creature::Destroy()
@@ -66,8 +70,13 @@ void Creature::Update()
 		curFrame++;
 		if(curFrame >= maxFrame)
 		{
-            if (GetID() == ENEMY) Stage::ObjectivesCount++;
-		SetAlive(false);
+            if (GetID() == ENEMY)
+            {
+                if (GetUnitType() == RARE) Stage::DecreaseRareNumber();
+                if (GetUnitType() == UNCOMMON) Stage::DecreaseUncommonNumber();
+                Stage::ObjectivesCount++;
+            }
+            SetAlive(false);
 		}
         frameCount = 0;
     }
@@ -76,6 +85,9 @@ void Creature::Update()
 
 	if(GetID() == ENEMY && x < 0)
         Stage::DecreaseStageLive();
+
+    if(GetID() == PLAYER && x > 1600)
+        Stage::AwardGold(ptr_to_squad->GetGoldCost());
 
 	if(x < 0 || x > 1600)
 		SetAlive(false);

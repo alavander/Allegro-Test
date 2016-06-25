@@ -8,6 +8,8 @@ struct stats
     int hp;
     float speed;
     int gold_cost;
+    std::string squad_name;
+    int UNIT_TYPE;
 };
 
 struct animation
@@ -41,6 +43,8 @@ class Squad
         int animationColumns;
         int attackDelay;
         int icon_number;
+        int UNIT_TYPE;
+        std::string squad_name;
 
 
         //int unit_number;          //Aktualny stan osobowy squadu
@@ -67,8 +71,10 @@ class Squad
         int GetFrameHeight() {return frameHeight;}
         int GetAnimationColumns() {return animationColumns;}
         int GetFraction() {return FRACTION;}
+        int GetUnitType() {return UNIT_TYPE;}
         int GetAttackDelay() {return attackDelay;}
         int GetIconNumber() {return icon_number;}
+        std::string GetSquadName() {return squad_name;}
 
         //Other:
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.

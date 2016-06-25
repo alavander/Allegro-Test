@@ -17,12 +17,8 @@
 
 /*
 Prototype-level ToDo:
-- Attack speed should be a separate variable, and based on it, animations should be faster or slower.
-- After attack there should be a short 'cooldown' period.
-- Add death animation rendering and game logic handling.
--Unit types: Berserker, Knight, Hero
--Enemies types: Ogre Leader
-- UI icons for creatures (50% done - need to show squad name and gold/honor cost)
+-Unit types: Berserker(size adjustments), Knight, Hero
+-Enemies types: Goblin (death animation),Ogre Leader
 - Add 'Honor' resource, gained by killing enemies (50%)
 - Add 'Honor' icon and floating text upon killing enemy.
 - Add troop type (common, uncommon, elite, hero) (50%)
@@ -32,16 +28,15 @@ Prototype-level ToDo:
 Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
 - Wrapping unit stats into class/struct/file (separate array for stats, and separate array for animations)
-- Make separate State class, for keeping game state.
 - Make separate Input class, for dealing with input.
-- Make separate Unit State class, for dealing with animation changes.
-
 
 Classes:
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
     select units and hero for the next mission.
 
 Alpha-level ToDo:
+- Attack speed should be a separate variable, and based on it, animations should be faster or slower.
+- After attack there should be a short 'cooldown' period.
 - Remove copy-by-value for stats/anim struct to squad
 - Add ranged attack options
 - Writing/Loading from files (unit stats, save/load(serialization), player progress)
@@ -64,6 +59,8 @@ int STATE = MENU;
 /* Stage variables */
 int Stage::STAGE_VICTORY_CONDITION = 1;
 int Stage::lives = 5;
+int Stage::rareNumber = 0;
+int Stage::uncommonNumber = 0;
 int Stage::ObjectivesCount = 0;
 int Stage::cameraX = 0;
 float Stage::gold = 100;
@@ -111,7 +108,7 @@ int main(int argc, char **argv)
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_TIMER *timer;
-	ALLEGRO_FONT *font18;
+	ALLEGRO_FONT *font18, *font12;
 
 //==============================================
 //ALLEGRO INIT FUNCTIONS
@@ -137,7 +134,8 @@ int main(int argc, char **argv)
 //==============================================
 //PROJECT INIT
 //==============================================
-	font18 = al_load_font("Data/dwarf.ttf", 20, 0);
+	font18 = al_load_font("Data/dwarf.ttf", 18, 0);
+	font12 = al_load_ttf_font("Data/dwarf.ttf", 12, 0);
     /*GUI*/
 	bgImage = al_load_bitmap("Data/BG01.jpg");
 	uiImage = al_load_bitmap("Data/background2.jpg");
@@ -159,19 +157,19 @@ int main(int argc, char **argv)
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats barbarian_stat = {19, 35, 1.7, 18};//DMG/HP/SPD/COST
+    stats barbarian_stat = {19, 35, 1.7, 18, "Barbarian", UNCOMMON};//DMG/HP/SPD/COST/SQUAD_NAME
     animation barbarian_anim = {6,6,120,100,9,10,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
     Squad *barbarian = new Squad(DWARFKIN, barbarian_stat, barbarian_anim);
-    stats soldier_stat = {11, 21, 2.2, 10};
+    stats soldier_stat = {11, 21, 2.2, 10, "Footman", COMMON};
     animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
-    stats goblin_stat = {8, 18, 2.5, 0};
+    stats goblin_stat = {8, 18, 2.5, 0, "", COMMON};
     animation goblin_anim = {4,6,125,100,4,15,goblinImage,0};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
-    stats troll_stat = {30, 175, 1.5, 0};
+    stats troll_stat = {30, 175, 1.5, 0, "", RARE};
     animation troll_anim = {8,6,250,200,8,18,trollImage,0};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
-    stats gnoll_stat = {14, 25, 2.2, 0};
+    stats gnoll_stat = {14, 25, 2.2, 0, "", UNCOMMON};
     animation gnoll_anim = {8,5,220,175,8,12,gnollImage,0};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
 
@@ -228,9 +226,6 @@ int main(int argc, char **argv)
             case ALLEGRO_KEY_3:
                 unit_selected = 3;
                 break;
-            case ALLEGRO_KEY_4:
-                unit_selected = 4;
-                break;
             case ALLEGRO_KEY_SPACE:
                     if (STATE == MENU )
                     {
@@ -285,12 +280,12 @@ int main(int argc, char **argv)
             /*Enemy Spawning*/
             if((STATE == PLAYING) && rand() % 115 == 0)
             {
-               if (rand() % 10 == 0)
+               if (rand() % 10 == 0 && Stage::GetRareNumber() < EnemyEliteCount)
                {
                Creature *troll = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, war_troll);
                objects.push_back(troll);
                }
-               else if (rand() % 3 == 0)
+               else if (rand() % 3 == 0 && Stage::GetUncommonNumber() < EnemyHeavyCount)
                {
                Creature *gnoll = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, gnoll_axeman);
                objects.push_back(gnoll);
@@ -397,23 +392,28 @@ int main(int argc, char **argv)
               }
             //Icons!
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 400,560, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 420, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 500,560, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 520, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 600,560, 0);
-            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 700,560, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
             al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
             /* Row Selected Cursor */
               al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 410+row_selected*20, 0);
             /* UI text */
               if (STATE == PAUSED)
-                al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
+                {al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
+                 al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTRE , "Enemy Rare count: %i", Stage::GetRareNumber());
+                 al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 70, ALLEGRO_ALIGN_CENTRE , "Enemy Uncommon count: %i", Stage::GetUncommonNumber());
+                }
                 al_draw_textf(font18, al_map_rgb(240, 180, 0), SCREEN_WIDTH/5, 550, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)Stage::GetStageGold());
 
               for (int i = 0; i < Stage::GetStageLives(); i++)
               {
                   al_draw_bitmap(heartIcon,5+(i*30), 0, 0);
               }
-              al_draw_textf(font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 40-(Stage::GetObjectivesCount()));
-              al_draw_textf(font18, al_map_rgb(240,240,240), 65, 30, ALLEGRO_ALIGN_CENTER, "CameraX: %i", Stage::cameraX);
+              if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
+                al_draw_textf(font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 40-(Stage::GetObjectivesCount()));
             }
               if (STATE == DEFEAT)
               {
@@ -452,6 +452,7 @@ int main(int argc, char **argv)
 
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);
+	al_destroy_font(font12);
 	al_destroy_timer(timer);
 	al_destroy_event_queue(event_queue);
 	al_destroy_display(display);

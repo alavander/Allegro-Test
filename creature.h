@@ -33,7 +33,7 @@ public:
     void SetCooldown(int attack_cooldown) {Creature::attack_cooldown = attack_cooldown;}
     int GetAttackValue() {return damage;}
     int GetHp() {return hp;}
-    int GetType() {return UNIT_TYPE;}
+    int GetUnitType() {return UNIT_TYPE;}
     void LoseLife(int hp) {Creature::hp -= hp;}
     void ChangeState(int newState); //Sprawdzamy czy nowy stan(animacja) nie jest taki sam, jesli nie, to resetujemy animacje
 
