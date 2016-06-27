@@ -1,6 +1,8 @@
 #pragma once
 #include "squad.h"
 #include "creature.h"
+#include "Const.h"
+#include <list>
 #include <iostream>
 
 class Deployment
@@ -10,7 +12,8 @@ class Deployment
         //Stage *PtrToSelectedStage;
         //int StageMapPosition[6]; //trzyma x,y,x,y,x,y na mapie trzech wygenerowanych stageow by pokazac zaznaczenie.
         //int SquadListPosition[];
-        //std::list<Squad*> AvailableSquads;
+        //std::list<Squad*> AvailableSquads; <- przekazujemy do obiektu?
+        //std::list<Squad*>::iterator squad_iter; <- j/w
 
         //utworz druzyne z posrod dostepnych
         //druzyny wybrane na nastepna mape

@@ -28,6 +28,7 @@ class Stage
         static void DecreaseUncommonNumber() {uncommonNumber--;}
         static void IncreaseUncommonNumber() {uncommonNumber++;}
 
+        /*Stage Timer*/
 
         static int cameraX;
 

@@ -3,7 +3,10 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 #include <list>
+#include <iterator>
 #include <string>
 #include <iostream>
 /* Local Includes */
@@ -17,13 +20,21 @@
 
 /*
 Prototype-level ToDo:
--Unit types: Berserker(size adjustments), Knight, Hero
--Enemies types: Goblin (death animation),Ogre Leader
+- Basic battle music (loop)
+- Better main menu and defeat screens, victory screen
+- Better UI for state playing
+- Add stage time pass as victory condition of siege
+- Add enemy hero killing as base victory condition for hero hunting
+- Add losing hero as base defeat condition in bloodbath and hero hunting
+- Add hero at the base of level for Bloodbath and Hero Hunting.
 - Add 'Honor' resource, gained by killing enemies (50%)
 - Add 'Honor' icon and floating text upon killing enemy.
-- Add troop type (common, uncommon, elite, hero) (50%)
+- Add Honor cost to squires
+- Show a number next to skeletal hand for easier row selection.
+- Show gold or honor actually only if unit needs it.
 - Basic squad selection at startup.
 - Random game type at startup.
+- Release :D
 
 Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
@@ -49,11 +60,20 @@ Alpha-level ToDo:
 //GLOBALS
 //==============================================
 
-
 std::list<GameObject *> objects;
 std::list<GameObject *>::iterator iter;
 std::list<GameObject *>::iterator iter2;
 
+std::list<Squad *> AvailableSquads;
+std::list<Squad *>::iterator sqiter;
+
+
+/* GUI variables */
+int row_selected = 1;
+int unit_selected = 1;
+bool cameraLeft = false;
+bool cameraRight = false;
+int StageTimeElapsed = 0;
 int STATE = MENU;
 
 /* Stage variables */
@@ -65,16 +85,11 @@ int Stage::ObjectivesCount = 0;
 int Stage::cameraX = 0;
 float Stage::gold = 100;
 
-/* GUI variables */
-int row_selected = 1;
-int unit_selected = 1;
-bool cameraLeft = false;
-bool cameraRight = false;
-
 /* Game Loop Functions */
 void Remove_dead_objects(); //Usuwa martwe obiekty z listy
 void Remove_all_objects(); //Usuwa wszystkie obiekty z listy
-void Stage_reset(); //Resetuje wartosci stage'a
+void Stage_init(); //Resetuje wartosci stage'a
+void Project_init();
 
 int main(int argc, char **argv)
 {
@@ -83,15 +98,18 @@ int main(int argc, char **argv)
 //==============================================
     bool done = false;
     bool render = false;
-
 //==============================================
 //PROJECT VARIABLES
 //==============================================
     ALLEGRO_BITMAP *soldierImage = NULL;
 	ALLEGRO_BITMAP *barbarianImage = NULL;
+	ALLEGRO_BITMAP *squireImage = NULL;
+	ALLEGRO_BITMAP *heroImage = NULL;
 	ALLEGRO_BITMAP *goblinImage = NULL;
 	ALLEGRO_BITMAP *trollImage = NULL;
 	ALLEGRO_BITMAP *gnollImage = NULL;
+	ALLEGRO_BITMAP *ogreImage = NULL;
+	ALLEGRO_BITMAP *skeletonImage = NULL;
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
 	ALLEGRO_BITMAP *hand = NULL;
@@ -101,7 +119,7 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *attack_icon = NULL;
 	ALLEGRO_BITMAP *unit_icon = NULL;
 	ALLEGRO_BITMAP *deployment_map = NULL;
-
+	ALLEGRO_SAMPLE *song = NULL;
 //==============================================
 //ALLEGRO VARIABLES
 //==============================================
@@ -118,6 +136,7 @@ int main(int argc, char **argv)
 
 	display = al_create_display(SCREEN_WIDTH, HEIGHT);			//create our display object
     al_set_window_title(display, "Undertales of Drakern");
+    al_hide_mouse_cursor(display);
 
 	if(!display)										//test display object
 		return -1;
@@ -130,12 +149,17 @@ int main(int argc, char **argv)
 	al_init_font_addon();
 	al_init_ttf_addon();
     al_init_primitives_addon();
+	al_install_audio();
+	al_init_acodec_addon();
 
 //==============================================
 //PROJECT INIT
 //==============================================
+    /*FONT*/
 	font18 = al_load_font("Data/dwarf.ttf", 18, 0);
 	font12 = al_load_ttf_font("Data/dwarf.ttf", 12, 0);
+	/*MUSIC*/
+    al_reserve_samples(1);
     /*GUI*/
 	bgImage = al_load_bitmap("Data/BG01.jpg");
 	uiImage = al_load_bitmap("Data/background2.jpg");
@@ -151,30 +175,64 @@ int main(int argc, char **argv)
 	/*Jednostki*/
 	soldierImage = al_load_bitmap("Data/units/soldier.png");
 	barbarianImage = al_load_bitmap("Data/units/barbarian.png");
+	squireImage = al_load_bitmap("Data/units/squire.png");
+	heroImage = al_load_bitmap("Data/units/hero.png");
 	goblinImage = al_load_bitmap("Data/units/goblin_pillager.png");
 	trollImage = al_load_bitmap("Data/units/troll.png");
 	gnollImage = al_load_bitmap("Data/units/gnoll_axeman.png");
+	ogreImage = al_load_bitmap("Data/units/ogre_leader.png");
+	skeletonImage = al_load_bitmap("Data/units/skeleton.png");
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats barbarian_stat = {19, 35, 1.7, 18, "Barbarian", UNCOMMON};//DMG/HP/SPD/COST/SQUAD_NAME
-    animation barbarian_anim = {6,6,120,100,9,10,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
+    stats barbarian_stat = {18, 28, 1.9, 20, "Barbarian", UNCOMMON};//DMG/HP/SPD/COST/SQUAD_NAME
+    animation barbarian_anim = {6,6,155,128,6,12,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
     Squad *barbarian = new Squad(DWARFKIN, barbarian_stat, barbarian_anim);
-    stats soldier_stat = {11, 21, 2.2, 10, "Footman", COMMON};
+    AvailableSquads.push_back(barbarian);
+    /*============================================================================*/
+    stats hero_stat = {25, 250, 1, 10, "Hero", LEGENDARY};
+    animation hero_anim = {11, 4, 250, 200, 11, 8, heroImage, 4};
+    Squad *hero = new Squad(DWARFKIN, hero_stat, hero_anim);
+    AvailableSquads.push_back(hero);
+    /*============================================================================*/
+    stats soldier_stat = {9, 15, 1.95, 10, "Footman", COMMON};
     animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
-    stats goblin_stat = {8, 18, 2.5, 0, "", COMMON};
+    AvailableSquads.push_back(soldier);
+    /*============================================================================*/
+    stats squire_stat = {16, 70, 1.6, 30, "Squire", RARE};
+    animation squire_anim = {7, 7, 200, 100, 7, 10, squireImage, 3};
+    Squad *squire = new Squad(DWARFKIN, squire_stat, squire_anim);
+    AvailableSquads.push_back(squire);
+    /*============================================================================*/
+    stats goblin_stat = {5, 12, 3.64, 0, "", COMMON};
     animation goblin_anim = {4,6,125,100,4,15,goblinImage,0};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
-    stats troll_stat = {30, 175, 1.5, 0, "", RARE};
-    animation troll_anim = {8,6,250,200,8,18,trollImage,0};
+    AvailableSquads.push_back(goblin_pillager);
+    /*============================================================================*/
+    stats troll_stat = {20, 92, 1.2, 0, "", RARE};
+    animation troll_anim = {8,6,250,200,8,15,trollImage,0};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
-    stats gnoll_stat = {14, 25, 2.2, 0, "", UNCOMMON};
+    AvailableSquads.push_back(war_troll);
+    /*============================================================================*/
+    stats gnoll_stat = {17, 21, 1.9, 0, "", UNCOMMON};
     animation gnoll_anim = {8,5,220,175,8,12,gnollImage,0};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
-
-    Deployment Deployed(soldier, barbarian, gnoll_axeman);
-
+    AvailableSquads.push_back(gnoll_axeman);
+    /*============================================================================*/
+    stats ogre_stat = {25, 250, 1, 10, "", LEGENDARY};
+    animation ogre_anim = {8, 4, 250, 200, 8, 12, ogreImage, 0};
+    Squad *ogre = new Squad(GREENSKINS, ogre_stat, ogre_anim);
+    AvailableSquads.push_back(ogre);
+    /*============================================================================*/
+    animation skel_anim = {7, 5, 150, 100, 7, 10, skeletonImage, 0};
+    /*============================================================================*/
+    sqiter = AvailableSquads.begin();
+    Deployment Deployed(soldier, barbarian, squire);
+//==============================================
+//MUSIC
+//==============================================
+	song = al_load_sample("Data/music/HeroicDemise.ogg");
 //==============================================
 //TIMER INIT AND STARTUP
 //==============================================
@@ -212,10 +270,31 @@ int main(int argc, char **argv)
                 if (row_selected < 3 ) row_selected += 1;
 				break;
             case ALLEGRO_KEY_LEFT:
-                cameraLeft = true;
+                if (STATE == PLAYING || STATE == PAUSED) cameraLeft = true;
+                if (STATE == DEPLOYMENT)
+                {
+                if (sqiter == AvailableSquads.begin()) sqiter = std::prev(std::prev(AvailableSquads.end()));
+                else sqiter--;
+                while ((*sqiter)->GetFraction() != DWARFKIN)
+                {
+                if(sqiter == AvailableSquads.begin()) sqiter = std::prev(std::prev(AvailableSquads.end()));
+                else sqiter--;
+                }
+                }
                 break;
             case ALLEGRO_KEY_RIGHT:
-                cameraRight = true;
+                if (STATE == PLAYING || STATE == PAUSED)cameraRight = true;
+                if (STATE == DEPLOYMENT)
+                {
+
+                if (sqiter == std::prev(std::prev(AvailableSquads.end()))) sqiter = AvailableSquads.begin();
+                else sqiter++;
+                while ((*sqiter)->GetFraction() != DWARFKIN)
+                {
+                    if(sqiter == std::prev(std::prev(AvailableSquads.end()))) sqiter = AvailableSquads.begin();
+                    else sqiter++;
+                }
+                }
                 break;
             case ALLEGRO_KEY_1:
                 unit_selected = 1;
@@ -235,12 +314,14 @@ int main(int argc, char **argv)
                     if (STATE == DEPLOYMENT )
                     {
                     STATE = PLAYING;
+                    al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
                     break;
                     }
                     else if (STATE == DEFEAT)
                     {
                         Remove_all_objects();
-                        Stage_reset();
+                        Stage_init();
+                        al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
                         break;
                     }
                     else if (STATE == PLAYING)
@@ -278,7 +359,7 @@ int main(int argc, char **argv)
 			//=====================
 
             /*Enemy Spawning*/
-            if((STATE == PLAYING) && rand() % 115 == 0)
+            if((STATE == PLAYING) && rand() % 100 == 0)
             {
                if (rand() % 10 == 0 && Stage::GetRareNumber() < EnemyEliteCount)
                {
@@ -299,9 +380,9 @@ int main(int argc, char **argv)
 
             /*Camera*/
             if (cameraLeft == true)
-                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 5);
+                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 6);
             if (cameraRight == true)
-                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 5);
+                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 6);
 
 
             /*Gold Generation*/
@@ -352,13 +433,15 @@ int main(int argc, char **argv)
 			if (Stage::GetStageLives() < 1)
             {
                 STATE = DEFEAT;
+                al_stop_samples();
             }
 			//jesli spelnimy objectives misji, to wygrywamy gre - observer pattern
             if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)
             {
-                STATE = MENU;
+                STATE = DEPLOYMENT;
+                al_stop_samples();
                 Remove_all_objects();
-                Stage_reset();
+                Stage_init();
             }
 		//==============================================
 		//RENDER
@@ -373,13 +456,18 @@ int main(int argc, char **argv)
             }
             if (STATE == DEPLOYMENT)
             {
-            al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//t³o
+            al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//tlo
             al_draw_text(font18, al_map_rgb(255,255,255), 215, 5, ALLEGRO_ALIGN_CENTER, "Map" );
             al_draw_bitmap(deployment_map,30,30,0);
             al_draw_text(font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
-            al_draw_filled_rectangle(460, 30, 750, 330, al_map_rgb(255,255,255));//squad selection
             al_draw_filled_rectangle(600, 500, 750, 530, al_map_rgb(255,255,255));//start button
             al_draw_text(font18, al_map_rgb(0,0,0), (600+750)/2, 505, ALLEGRO_ALIGN_CENTER, "Start Mission" );
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 40, NULL, "Squad Name: %s",(*sqiter)->GetSquadName().c_str());
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 60, NULL, "Level: %i (exp:%i)",(*sqiter)->GetLevel(),(int)(*sqiter)->GetSquadXP());
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 80, NULL, "ATK: %i",(*sqiter)->GetDamage());
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 100, NULL, "HP: %i",(*sqiter)->GetHp());
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 120, NULL, "SPEED: %f",(*sqiter)->GetSpeed());
+            al_draw_textf(font18, al_map_rgb(255,255,255), 460, 140, NULL, "Gold Cost: %i",(*sqiter)->GetGoldCost());
             }
 			if (STATE == PLAYING || STATE == PAUSED )
             {
@@ -391,10 +479,13 @@ int main(int argc, char **argv)
                   (*iter)->Render();
               }
             //Icons!
+            al_draw_text(font18, al_map_rgb(255,255,255), 380, 570, 0, "1.");
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 400,560, 0);
             al_draw_textf(font12, al_map_rgb(255,255,255), 420, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
+            al_draw_text(font18, al_map_rgb(255,255,255), 480, 570, 0, "2.");
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 500,560, 0);
             al_draw_textf(font12, al_map_rgb(255,255,255), 520, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
+            al_draw_text(font18, al_map_rgb(255,255,255), 580, 570, 0, "3.");
             al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 600,560, 0);
             al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
             al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
@@ -414,7 +505,11 @@ int main(int argc, char **argv)
               }
               if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
                 al_draw_textf(font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 40-(Stage::GetObjectivesCount()));
-            }
+
+
+			  StageTimeElapsed++;
+			  al_draw_textf(font18, al_map_rgb(255,255,255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTER, "%i:%i",(StageTimeElapsed/60/60),(StageTimeElapsed/60)%60);
+              }
               if (STATE == DEFEAT)
               {
                 al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE, "You have been defeated!");
@@ -435,11 +530,21 @@ int main(int argc, char **argv)
 		delete (*iter);
 		iter = objects.erase(iter);
 	}
+
+	for(sqiter = AvailableSquads.begin(); sqiter != AvailableSquads.end(); )
+	{
+		delete (*sqiter);
+		sqiter = AvailableSquads.erase(sqiter);
+	}
     al_destroy_bitmap(soldierImage);
 	al_destroy_bitmap(barbarianImage);
 	al_destroy_bitmap(goblinImage);
 	al_destroy_bitmap(trollImage);
+	al_destroy_bitmap(ogreImage);
+	al_destroy_bitmap(squireImage);
+	al_destroy_bitmap(heroImage);
 	al_destroy_bitmap(gnollImage);
+	al_destroy_bitmap(skeletonImage);
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);
 	al_destroy_bitmap(hand);
@@ -450,18 +555,14 @@ int main(int argc, char **argv)
     al_destroy_bitmap(unit_icon);
     al_destroy_bitmap(deployment_map);
 
+
 	//SHELL OBJECTS=================================
 	al_destroy_font(font18);
 	al_destroy_font(font12);
 	al_destroy_timer(timer);
 	al_destroy_event_queue(event_queue);
 	al_destroy_display(display);
-
-    delete barbarian;
-    delete soldier;
-    delete goblin_pillager;
-    delete war_troll;
-    delete gnoll_axeman;
+	al_destroy_sample(song);
 
 	return 0;
 }
@@ -489,11 +590,15 @@ void Remove_all_objects()
 			}
 };
 
-void Stage_reset() // Przeniesc jako metode do stage.h
+void Stage_init() // Przeniesc jako metode do stage.h
 {
-     Stage::lives = 5;
-     Stage::ObjectivesCount = 0;
-     Stage::gold = 100;
-     Stage::cameraX = 0;
-     STATE = PLAYING;
+Stage::STAGE_VICTORY_CONDITION = 1;
+Stage::lives = 5;
+Stage::rareNumber = 0;
+Stage::uncommonNumber = 0;
+Stage::ObjectivesCount = 0;
+Stage::cameraX = 0;
+Stage::gold = 100;
+StageTimeElapsed = 0;
+STATE = PLAYING;
 }
