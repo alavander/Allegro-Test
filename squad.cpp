@@ -22,5 +22,6 @@ Squad::Squad(int FRACTION, stats sq_stat, animation sq_anim)
     Squad::image = sq_anim.image;
     Squad::attackDelay =sq_anim.attackDelay;
     Squad::icon_number = sq_anim.icon_number;
+    Squad::isDeploying = false;
 };
 

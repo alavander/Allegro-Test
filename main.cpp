@@ -20,7 +20,6 @@
 
 /*
 Prototype-level ToDo:
-- Basic battle music (loop)
 - Better main menu and defeat screens, victory screen
 - Better UI for state playing
 - Add stage time pass as victory condition of siege
@@ -30,9 +29,9 @@ Prototype-level ToDo:
 - Add 'Honor' resource, gained by killing enemies (50%)
 - Add 'Honor' icon and floating text upon killing enemy.
 - Add Honor cost to squires
-- Show a number next to skeletal hand for easier row selection.
+- Show a number next to skeletal hand for easier row selection.(DONE)
 - Show gold or honor actually only if unit needs it.
-- Basic squad selection at startup.
+- Basic squad selection at startup. (DONE)
 - Random game type at startup.
 - Release :D
 
@@ -43,7 +42,7 @@ Code-tidying:
 
 Classes:
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
-    select units and hero for the next mission.
+    select units and hero for the next mission. (50% DONE)
 
 Alpha-level ToDo:
 - Attack speed should be a separate variable, and based on it, animations should be faster or slower.
@@ -112,7 +111,6 @@ int main(int argc, char **argv)
 	ALLEGRO_BITMAP *skeletonImage = NULL;
 	ALLEGRO_BITMAP *bgImage = NULL;
 	ALLEGRO_BITMAP *uiImage = NULL;
-	ALLEGRO_BITMAP *hand = NULL;
 	ALLEGRO_BITMAP *titleScreen = NULL;
 	ALLEGRO_BITMAP *heartIcon = NULL;
 	ALLEGRO_BITMAP *gold_icon = NULL;
@@ -166,8 +164,6 @@ int main(int argc, char **argv)
 	titleScreen = al_load_bitmap("Data/title_screen.png");
 	heartIcon = al_load_bitmap("Data/heart_icon.png");
 	al_convert_mask_to_alpha(heartIcon, al_map_rgb(80,80,200));
-	hand = al_load_bitmap("Data/hand.png");
-	al_convert_mask_to_alpha(hand, al_map_rgb(255,0,0));
 	gold_icon = al_load_bitmap("Data/gold_icon.png");
 	attack_icon = al_load_bitmap("Data/attack_icon.png");
 	unit_icon = al_load_bitmap("Data/unit_icons_40x40.jpg");
@@ -199,6 +195,14 @@ int main(int argc, char **argv)
     animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
     AvailableSquads.push_back(soldier);
+    /*============================================================================*/
+    stats soldier_stat2 = {10, 15, 1.95, 10, "Footman2", COMMON};
+    Squad *soldier2 = new Squad(DWARFKIN, soldier_stat2, soldier_anim);
+    AvailableSquads.push_back(soldier2);
+    /*============================================================================*/
+    stats soldier_stat4 = {12, 15, 1.95, 10, "Footman4", COMMON};
+    Squad *soldier4 = new Squad(DWARFKIN, soldier_stat4, soldier_anim);
+    AvailableSquads.push_back(soldier4);
     /*============================================================================*/
     stats squire_stat = {16, 70, 1.6, 30, "Squire", RARE};
     animation squire_anim = {7, 7, 200, 100, 7, 10, squireImage, 3};
@@ -271,39 +275,54 @@ int main(int argc, char **argv)
 				break;
             case ALLEGRO_KEY_LEFT:
                 if (STATE == PLAYING || STATE == PAUSED) cameraLeft = true;
-                if (STATE == DEPLOYMENT)
+                if (STATE == DEPLOYMENT)//wybor squada podczas deploymentu
                 {
                 if (sqiter == AvailableSquads.begin()) sqiter = std::prev(std::prev(AvailableSquads.end()));
                 else sqiter--;
-                while ((*sqiter)->GetFraction() != DWARFKIN)
+                while ((*sqiter)->GetFraction() != DWARFKIN || (*sqiter)->GetDeploying() == true)
                 {
                 if(sqiter == AvailableSquads.begin()) sqiter = std::prev(std::prev(AvailableSquads.end()));
                 else sqiter--;
-                }
-                }
+                }}
                 break;
             case ALLEGRO_KEY_RIGHT:
                 if (STATE == PLAYING || STATE == PAUSED)cameraRight = true;
-                if (STATE == DEPLOYMENT)
+                if (STATE == DEPLOYMENT)//Wybor squada podczas deploymentu
                 {
-
                 if (sqiter == std::prev(std::prev(AvailableSquads.end()))) sqiter = AvailableSquads.begin();
                 else sqiter++;
-                while ((*sqiter)->GetFraction() != DWARFKIN)
+                while ((*sqiter)->GetFraction() != DWARFKIN || (*sqiter)->GetDeploying() == true)
                 {
                     if(sqiter == std::prev(std::prev(AvailableSquads.end()))) sqiter = AvailableSquads.begin();
                     else sqiter++;
-                }
-                }
+                }}
                 break;
             case ALLEGRO_KEY_1:
                 unit_selected = 1;
+                if (STATE == DEPLOYMENT)
+                {//Sprawdzanie czy w innych slotach juz jest.
+                    Deployed.OccupiedSlot_1->SetDeploying(false);
+                    Deployed.SelectSquadForDeployment((*sqiter), 1);
+                    (*sqiter)->SetDeploying(true);
+                }
                 break;
             case ALLEGRO_KEY_2:
                 unit_selected = 2;
+                if (STATE == DEPLOYMENT)
+                {
+                    Deployed.OccupiedSlot_2->SetDeploying(false);
+                    Deployed.SelectSquadForDeployment((*sqiter), 2);
+                    (*sqiter)->SetDeploying(true);
+                }
                 break;
             case ALLEGRO_KEY_3:
                 unit_selected = 3;
+                if (STATE == DEPLOYMENT)
+                {
+                    Deployed.OccupiedSlot_3->SetDeploying(false);
+                    Deployed.SelectSquadForDeployment((*sqiter), 3);
+                    (*sqiter)->SetDeploying(true);
+                }
                 break;
             case ALLEGRO_KEY_SPACE:
                     if (STATE == MENU )
@@ -468,6 +487,15 @@ int main(int argc, char **argv)
             al_draw_textf(font18, al_map_rgb(255,255,255), 460, 100, NULL, "HP: %i",(*sqiter)->GetHp());
             al_draw_textf(font18, al_map_rgb(255,255,255), 460, 120, NULL, "SPEED: %f",(*sqiter)->GetSpeed());
             al_draw_textf(font18, al_map_rgb(255,255,255), 460, 140, NULL, "Gold Cost: %i",(*sqiter)->GetGoldCost());
+            al_draw_text(font18, al_map_rgb(255,255,255), 460, 200, 0, "1.");
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 480,200, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 530, 200, 0, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
+            al_draw_text(font18, al_map_rgb(255,255,255), 460, 260, 0, "2.");
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 480,260, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 530, 260, 0, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
+            al_draw_text(font18, al_map_rgb(255,255,255), 460, 320, 0, "3.");
+            al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 480,320, 0);
+            al_draw_textf(font12, al_map_rgb(255,255,255), 530, 320, 0, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
             }
 			if (STATE == PLAYING || STATE == PAUSED )
             {
@@ -490,7 +518,7 @@ int main(int argc, char **argv)
             al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
             al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
             /* Row Selected Cursor */
-              al_draw_tinted_bitmap(hand, al_map_rgba_f(1, 1, 1, 0.1), 5, 410+row_selected*20, 0);
+              al_draw_textf(font12, al_map_rgb(255,255,255), 5, 410+row_selected*20, 0 ,"%i. lane>", row_selected);
             /* UI text */
               if (STATE == PAUSED)
                 {al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE , "Game Paused");
@@ -547,7 +575,6 @@ int main(int argc, char **argv)
 	al_destroy_bitmap(skeletonImage);
 	al_destroy_bitmap(bgImage);
 	al_destroy_bitmap(uiImage);
-	al_destroy_bitmap(hand);
 	al_destroy_bitmap(titleScreen);
 	al_destroy_bitmap(heartIcon);
 	al_destroy_bitmap(attack_icon);

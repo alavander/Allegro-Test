@@ -62,6 +62,7 @@ class Squad
         //Getters:
         float GetSquadXP() {return experience;}
         float GetSpeed() {return speed;}
+        int GetLevel() {return level;}
         int GetGoldCost() {return gold_cost;}
         int GetDamage() {return damage;}
         int GetHp() {return hp;}
@@ -75,11 +76,12 @@ class Squad
         int GetAttackDelay() {return attackDelay;}
         int GetIconNumber() {return icon_number;}
         std::string GetSquadName() {return squad_name;}
+        bool GetDeploying() {return isDeploying;}
+        void SetDeploying(bool isDeploying) {Squad::isDeploying = isDeploying;}
 
         //Other:
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.
         void UpdateStats(); //Updatuje staty(zmiany eq lub level upy)
-        //bool isDeploying; //Jesli jest isDeploying to znika z listy do deploy
-        //bool isSelected; //Jesli jest wybrane, to pokazuje staty i img wybranego Squada
+        bool isDeploying; //Jesli jest isDeploying to znika z listy do deploy
 };
 
