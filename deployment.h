@@ -31,4 +31,5 @@ class Deployment
         GameObject * SpawnUnit(int Selected_Row, int Selected_Slot);
         Squad GetSelectedSlot(int slot);//Aktualnie wybrany slot unita, do pobierania danych
         void SelectSquadForDeployment(Squad *selectedSquad, int slot);
+
 };

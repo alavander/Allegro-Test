@@ -27,18 +27,15 @@
 - Stage: Stage should have: background, objectives, enemy type, diffaulty, description, picture
 - Stage: A stage should also have enemy types and enemy hero type
 - Stage: A stage should have stage traits
-- Consolidated 'remove object' functions into one, with various flags. (done)
-- Aftermatch: defeat screens, victory screen (variable in Stage -> showed in the aftermatch) (done)
 - Clearing not currently selected stages when going from deployment to stage
 - Player class, which holds the squad list variable, number of victories, number of defeats
 - Better main menu
 - Cleaning currently selected stage when in menu screen
 - Better UI for state playing
-- Add stage time pass as victory condition of siege (18000 is 5 minutes)
-- Add enemy hero killing as base victory condition for hero hunting
-- Add losing hero as base defeat condition in bloodbath and hero hunting
-- Add hero at the base of level for Bloodbath and Hero Hunting.
-- Add 'Honor' icon. (done)
+- Add stage time pass as victory condition of siege (18000 is 5 minutes) (done)
+- Add enemy hero killing as base victory condition for hero hunting (done)
+- Add losing hero as base defeat condition in bloodbath and hero hunting (done)
+- Add hero at the base of level for Bloodbath and Hero Hunting. (done)
 - Show gold or honor actually only if unit needs it.
 
 Code-tidying:
@@ -81,7 +78,7 @@ int StageTimeElapsed = 0;
 int STATE = MENU;
 
 /* Stage variables */
-int Stage::STAGE_VICTORY_CONDITION = 1;
+int Stage::STAGE_VICTORY_CONDITION = SIEGE;
 int Stage::AftermatchStatus = UNRESOLVED;
 int Stage::lives = 5;
 int Stage::rareNumber = 0;
@@ -90,6 +87,8 @@ int Stage::ObjectivesCount = 0;
 int Stage::cameraX = 0;
 float Stage::gold = 100;
 int Stage::honor = 0;
+Creature *ptr_to_hero = NULL;
+Creature *ptr_to_enemy = NULL;
 
 /* Game Loop Functions */
 void Remove_objects(int remove_flag); //Usuwa obiekty w zaleznosci od parametru
@@ -175,7 +174,7 @@ int main(int argc, char **argv)
     soldierImage = al_load_bitmap("Data/units/soldier.png");
     barbarianImage = al_load_bitmap("Data/units/barbarian.png");
     squireImage = al_load_bitmap("Data/units/squire.png");
-    heroImage = al_load_bitmap("Data/units/hero.png");
+    heroImage = al_load_bitmap("Data/units/hero_idle.png");
     goblinImage = al_load_bitmap("Data/units/goblin_pillager.png");
     trollImage = al_load_bitmap("Data/units/troll.png");
     gnollImage = al_load_bitmap("Data/units/gnoll_axeman.png");
@@ -195,7 +194,7 @@ int main(int argc, char **argv)
     AvailableSquads.push_back(barbarian);
     /*============================================================================*/
     stats hero_stat = {25, 250, 1, 10, 0, "Hero", LEGENDARY};
-    animation hero_anim = {11, 4, 250, 200, 11, 8, heroImage, 4};
+    animation hero_anim = {11, 8, 250, 200, 11, 10, heroImage, 4};
     Squad *hero = new Squad(DWARFKIN, hero_stat, hero_anim);
     AvailableSquads.push_back(hero);
     /*============================================================================*/
@@ -344,6 +343,21 @@ int main(int argc, char **argv)
                     STATE = PLAYING;
                     Stage_init();
                     al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
+                        if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
+                        {
+                            Creature *stageHero = new Creature(40, 0, hero);
+                            ptr_to_hero = stageHero;
+                            objects.push_back(stageHero);
+                        }
+                        else if (Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
+                        {
+                            Creature *stageHero = new Creature(40, 0, hero);
+                            ptr_to_hero = stageHero;
+                            objects.push_back(stageHero);
+                            Creature *enemyHero = new Creature(1560, 0, ogre);
+                            ptr_to_enemy = enemyHero;
+                            objects.push_back(enemyHero);
+                        }
                     break;
                 }
                 if (STATE == AFTERMATCH)
@@ -393,8 +407,16 @@ int main(int argc, char **argv)
             render = true;
             //=====================
 
+            /*Camera*/
+            if (cameraLeft == true)
+                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 6);
+            if (cameraRight == true)
+                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 6);
+
+            if(STATE == PLAYING)
+            {
             /*Enemy Spawning*/
-            if((STATE == PLAYING) && rand() % 100 == 0)
+            if(rand() % 100 == 0)
             {
                 if (rand() % 10 == 0 && Stage::GetRareNumber() < EnemyEliteCount)
                 {
@@ -413,15 +435,7 @@ int main(int argc, char **argv)
                 }
             }
 
-            /*Camera*/
-            if (cameraLeft == true)
-                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 6);
-            if (cameraRight == true)
-                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 6);
-
-
             /*Gold Generation*/
-            if(STATE == PLAYING)
                 Stage::AwardGold(0.04);
 
             /*Sorting by value of Y - Thank you Lambdas and Stackoverflow!*/
@@ -431,7 +445,6 @@ int main(int argc, char **argv)
             });
 
             /*Collision Checking*/
-            if ( STATE == PLAYING)
                 for(iter = objects.begin(); iter != objects.end(); ++iter)
                 {
                     if ( !(*iter)->GetAlive() || !(*iter)->GetSolid())continue;
@@ -455,7 +468,6 @@ int main(int argc, char **argv)
                     }
                 };
             //Updating
-            if( STATE == PLAYING)
                 for(iter = objects.begin(); iter != objects.end(); ++iter)
                 {
                     if ( !(*iter)->GetAlive()) continue;
@@ -467,13 +479,29 @@ int main(int argc, char **argv)
             //cull the dead
             Remove_objects(deadObj);
 
-            //jesli stracimy hp to konczymy gre - observer pattern
-            if (Stage::GetStageLives() < 1)
+            //jesli stracimy hp/zginie nam hero to konczymy gre - observer pattern
+            if (Stage::GetStageLives() < 1 || Stage::STAGE_VICTORY_CONDITION != SIEGE && (*ptr_to_hero).GetHp() < 1)
             {
                 Stage::SetAftermatchStatus(DEFEAT);
                 STATE = AFTERMATCH;
                 Remove_objects(miscObj);//Usuwamy m.in floating text
                 al_stop_samples();
+            }
+            if (Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
+            {
+                if ((*ptr_to_enemy).GetHp() < 1) Stage::ObjectivesCount++;
+            }
+
+            if (Stage::STAGE_VICTORY_CONDITION == SIEGE) // Poprawic zeby bralo dobrze
+            {
+                if (StageTimeElapsed > 14400)
+                Stage::ObjectivesCount = 4;
+                else if (StageTimeElapsed > 10800)
+                Stage::ObjectivesCount = 3;
+                else if (StageTimeElapsed > 7200)
+                Stage::ObjectivesCount = 2;
+                else if (StageTimeElapsed > 3600)
+                Stage::ObjectivesCount = 1;
             }
             //jesli spelnimy objectives misji, to wygrywamy gre - observer pattern?
             if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)
@@ -482,6 +510,7 @@ int main(int argc, char **argv)
                 STATE = AFTERMATCH;
                 Remove_objects(miscObj);
                 al_stop_samples();
+            }
             }
             //==============================================
             //RENDER
@@ -550,20 +579,34 @@ int main(int argc, char **argv)
                         al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE, "Game Paused");
                         //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTRE, "Enemy Rare count: %i", Stage::GetRareNumber());
                         //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 70, ALLEGRO_ALIGN_CENTRE, "Enemy Uncommon count: %i", Stage::GetUncommonNumber());
-                        //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 90, ALLEGRO_ALIGN_CENTRE, "Stage Time Elapsed: %i", StageTimeElapsed);
+                        al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 90, ALLEGRO_ALIGN_CENTRE, "Stage Time Elapsed: %i", StageTimeElapsed);
+                        al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 110, ALLEGRO_ALIGN_CENTRE, "Objectives Count: %i", Stage::GetObjectivesCount());
                     }
                     al_draw_textf(font18, al_map_rgb(240, 180, 0), SCREEN_WIDTH/5, 545, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)Stage::GetStageGold());
                     al_draw_bitmap_region(icons, 20, 0, 10, 10, SCREEN_WIDTH/5+60, 545, 0);
                     al_draw_textf(font18, al_map_rgb(255,255,255), SCREEN_WIDTH/5, 570, ALLEGRO_ALIGN_CENTRE, "Honor: %i", Stage::GetStageHonor());
                     al_draw_bitmap_region(icons, 30, 0, 10, 10, SCREEN_WIDTH/5+60, 570, 0);
 
+                    if (Stage::STAGE_VICTORY_CONDITION == SIEGE)
+                    {
                     for (int i = 0; i < Stage::GetStageLives(); i++)
                     {
+                        al_draw_textf(font18, al_map_rgb(240,30,0), 625, 10, ALLEGRO_ALIGN_CENTER, "Survive for %i more minutes.", 4-(Stage::GetObjectivesCount()));
                         al_draw_bitmap(heartIcon,5+(i*30), 0, 0);
                     }
-                    if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
-                        al_draw_textf(font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 40-(Stage::GetObjectivesCount()));
+                    }
 
+                    if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
+                    {
+                        al_draw_textf(font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 50-(Stage::GetObjectivesCount()));
+                        al_draw_textf(font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero hp: %i", (*ptr_to_hero).GetHp());
+                    }
+
+                    if (Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
+                    {
+                        al_draw_textf(font18, al_map_rgb(255,255,255), 560, 10, 0, "Enemy Hero Hp: %i", (*ptr_to_enemy).GetHp());
+                        al_draw_textf(font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero Hp: %i", (*ptr_to_hero).GetHp());
+                    }
 
                     if (STATE == PLAYING ) StageTimeElapsed++;
                     al_draw_textf(font18, al_map_rgb(255,255,255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTER, "%i:%i",(StageTimeElapsed/60/60),(StageTimeElapsed/60)%60);
@@ -677,7 +720,6 @@ void Remove_objects(int remove_flag)
 
 void Stage_init() // Przeniesc jako metode do stage.h
 {
-    Stage::STAGE_VICTORY_CONDITION = 1;
     Stage::lives = 5;
     Stage::rareNumber = 0;
     Stage::uncommonNumber = 0;
@@ -688,4 +730,6 @@ void Stage_init() // Przeniesc jako metode do stage.h
     StageTimeElapsed = 0;
     STATE = PLAYING;
     Stage::SetAftermatchStatus(UNRESOLVED);
+    Creature *ptr_to_hero = NULL;
+    Creature *ptr_to_enemy = NULL;
 }

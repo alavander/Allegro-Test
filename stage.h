@@ -43,15 +43,15 @@ class Stage
             switch (STAGE_VICTORY_CONDITION)
             {
                 case HERO_HUNTING:
-                if (obj_count >= 0) return true;
+                if (obj_count >= 1) return true; //1 enemy hero killed
                 else return false;
                 break;
                 case BLOODBATH:
-                if (obj_count >= 40) return true;
+                if (obj_count >= 50) return true; //score 50 kills
                 else return false;
                 break;
                 case SIEGE:
-                if (obj_count >= 20) return true;
+                if (obj_count >= 4) return true; //survive 4 minutes
                 else return false;
                 break;
                 default:

@@ -3,7 +3,7 @@
 const int SCREEN_WIDTH = 800;
 const int WORLD_WIDTH = 1600;
 const int HEIGHT = 600;
-const float LANE[] = {0,450,470,490};
+const float LANE[] = {420,450,470,490};
 
 /* Enemies Count - max number of spawned uncommon and rare creatures*/
 const int EnemyHeavyCount = 6;

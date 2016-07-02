@@ -35,7 +35,9 @@ void Creature::Destroy()
 
 void Creature::Update()
 {
-	GameObject::Update();
+	if (GetUnitType() != LEGENDARY)
+    GameObject::Update();
+
 	if (IfIsDying() == true) ChangeState(DYING); //Sprawdzamy czy umiera
 	else if (IfIsAttacking() == true) ChangeState(ATTACKING); //Jesli nie umiera, to sprawdzamy czy atakuje
 	else if (CanMove() == true) ChangeState(WALKING); //Jesli ani nie umiera, ani nie atakuje, to sprawdzamy czy moze isc
@@ -79,20 +81,57 @@ void Creature::Update()
                 Stage::AwardHonor(1);
                 }
             }
-            Stage::ObjectivesCount++;
+            if(Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
+                Stage::ObjectivesCount++;
             SetAlive(false);
 		}
         frameCount = 0;
     }
 	break;
     }
+
+    switch(Stage::STAGE_VICTORY_CONDITION)
+    {
+    case SIEGE:
+        {
 	if(GetID() == ENEMY && x < 0)
         Stage::DecreaseStageLive();
     if(GetID() == PLAYER && x > 1600)
         Stage::AwardGold(ptr_to_squad->GetGoldCost());
 	if(x < 0 || x > 1600)
 		SetAlive(false);
-    	SetMove(true); //Defaulotowo przyjmujemy, ze moze chodzic
+    break;
+        }
+    case BLOODBATH:
+        {
+	if(GetID() == ENEMY && x < 150 && GetY() != 0)
+        {
+            SetY(0);
+            SetX(150);
+        }
+    if(GetID() == PLAYER && x > 1600)
+        Stage::AwardGold(ptr_to_squad->GetGoldCost());
+	if( x > 1600)
+		SetAlive(false);
+    break;
+        }
+    case HERO_HUNTING:
+        {
+	if(GetID() == ENEMY && x < 150 && GetY() != 0)
+        {
+            SetY(0);
+            SetX(150);
+        }
+    if(GetID() == PLAYER && x > 1450 && GetY() != 0)
+        {
+            SetY(0);
+            SetX(1450);
+        }
+    break;
+        }
+    }
+
+        SetMove(true); //Defaulotowo przyjmujemy, ze moze chodzic, jesli nie jest herosem
     	SetAttacking(false); //Defaultowo przyjmujemy, ze nie atakuje
 }
 

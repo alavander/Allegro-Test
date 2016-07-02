@@ -100,6 +100,10 @@ bool GameObject::CollisionCheck(GameObject *otherObject)
     int Lane = GetY();
 	switch(Lane)
 	{
+        case 0:
+        PositionY = LANE[0] - frameHeight;
+        return PositionY;
+        break;
         case 1:
         PositionY = LANE[1] - frameHeight;
         return PositionY;
