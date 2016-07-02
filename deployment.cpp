@@ -3,11 +3,11 @@
 Deployment::Deployment(Squad *slot1, Squad *slot2, Squad *slot3)
 {
     OccupiedSlot_1 = &*slot1;
-    OccupiedSlot_1->SetDeploying(true);
+    OccupiedSlot_1->SetDeploying(1);
     OccupiedSlot_2 = &*slot2;
-    OccupiedSlot_2->SetDeploying(true);
+    OccupiedSlot_2->SetDeploying(2);
     OccupiedSlot_3 = &*slot3;
-    OccupiedSlot_3->SetDeploying(true);
+    OccupiedSlot_3->SetDeploying(3);
 };
 
 GameObject * Deployment::SpawnUnit(int Selected_Row, int Selected_Slot)

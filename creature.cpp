@@ -1,7 +1,5 @@
 #include "creature.h"
 
-
-
 Creature::Creature(float x, float y, Squad *squad_name)
 {
     Creature::ptr_to_squad = &*squad_name;
@@ -38,11 +36,9 @@ void Creature::Destroy()
 void Creature::Update()
 {
 	GameObject::Update();
-
 	if (IfIsDying() == true) ChangeState(DYING); //Sprawdzamy czy umiera
 	else if (IfIsAttacking() == true) ChangeState(ATTACKING); //Jesli nie umiera, to sprawdzamy czy atakuje
 	else if (CanMove() == true) ChangeState(WALKING); //Jesli ani nie umiera, ani nie atakuje, to sprawdzamy czy moze isc
-
     switch(ANIMATION)
     {
     case WALKING:
@@ -72,26 +68,30 @@ void Creature::Update()
 		{
             if (GetID() == ENEMY)
             {
-                if (GetUnitType() == RARE) Stage::DecreaseRareNumber();
-                if (GetUnitType() == UNCOMMON) Stage::DecreaseUncommonNumber();
-                Stage::ObjectivesCount++;
+                if (GetUnitType() == RARE)
+                {
+                 Stage::DecreaseRareNumber();
+                 Stage::AwardHonor(3);
+                }
+                if (GetUnitType() == UNCOMMON)
+                {
+                Stage::DecreaseUncommonNumber();
+                Stage::AwardHonor(1);
+                }
             }
+            Stage::ObjectivesCount++;
             SetAlive(false);
 		}
         frameCount = 0;
     }
 	break;
     }
-
 	if(GetID() == ENEMY && x < 0)
         Stage::DecreaseStageLive();
-
     if(GetID() == PLAYER && x > 1600)
         Stage::AwardGold(ptr_to_squad->GetGoldCost());
-
 	if(x < 0 || x > 1600)
 		SetAlive(false);
-
     	SetMove(true); //Defaulotowo przyjmujemy, ze moze chodzic
     	SetAttacking(false); //Defaultowo przyjmujemy, ze nie atakuje
 }

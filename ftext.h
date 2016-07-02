@@ -5,14 +5,14 @@
 class Ftext : public GameObject
 {
     private:
-        int duration, display;
+        int duration, display, icon_type;
 
     protected:
         ALLEGRO_FONT *font;
         ALLEGRO_BITMAP *image;
 
     public:
-        Ftext(float x, float y, float velY, int display, int duration, ALLEGRO_FONT *font, ALLEGRO_BITMAP *image);
+        Ftext(float x, float y, float velY, int display, int duration, ALLEGRO_FONT *font, ALLEGRO_BITMAP *image, int icon_type);
         void Destroy();
         void Update();
         void Render();

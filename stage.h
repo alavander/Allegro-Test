@@ -13,10 +13,10 @@ class Stage
         static void AwardGold(float amount) {gold += amount;}
         static void SpendGold(float amount) {gold -= amount;}
         /* Honor related */
-        static float honor;
+        static int honor;
         static int GetStageHonor() {return honor;}
-        static void AwardHonor(float amount) {honor += amount;}
-        static void SpendHonor(float amount) {honor -= amount;}
+        static void AwardHonor(int amount) {honor += amount;}
+        static void SpendHonor(int amount) {honor -= amount;}
 
         /*Enemies count*/
         static int rareNumber;
@@ -28,9 +28,11 @@ class Stage
         static void DecreaseUncommonNumber() {uncommonNumber--;}
         static void IncreaseUncommonNumber() {uncommonNumber++;}
 
-        /*Stage Timer*/
-
+        /*Stage Misc*/
         static int cameraX;
+        static int AftermatchStatus;
+        static int GetAftermachStatus() {return AftermatchStatus;}
+        static void SetAftermatchStatus(int newStatus) {Stage::AftermatchStatus = newStatus;}
 
         //Victory Condition-Related:
         static int STAGE_VICTORY_CONDITION; //Hero_hunting, bloodbath, siege

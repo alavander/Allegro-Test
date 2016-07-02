@@ -10,6 +10,7 @@ Squad::Squad(int FRACTION, stats sq_stat, animation sq_anim)
     Squad::squad_anim = &sq_anim;
     Squad::UNIT_TYPE = sq_stat.UNIT_TYPE;
     Squad::gold_cost = sq_stat.gold_cost;
+    Squad::honor_cost = sq_stat.honor_cost;
     Squad::damage = sq_stat.damage;
     Squad::hp = sq_stat.hp;
     Squad::speed = sq_stat.speed;
@@ -22,6 +23,6 @@ Squad::Squad(int FRACTION, stats sq_stat, animation sq_anim)
     Squad::image = sq_anim.image;
     Squad::attackDelay =sq_anim.attackDelay;
     Squad::icon_number = sq_anim.icon_number;
-    Squad::isDeploying = false;
+    Squad::isDeploying = 0;
 };
 

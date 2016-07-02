@@ -31,11 +31,4 @@ class Deployment
         GameObject * SpawnUnit(int Selected_Row, int Selected_Slot);
         Squad GetSelectedSlot(int slot);//Aktualnie wybrany slot unita, do pobierania danych
         void SelectSquadForDeployment(Squad *selectedSquad, int slot);
-
-        //int Deployment(int DifficulityMultiplier); //glowna petla deploymentu
-        //void StageRequestGeneration(); //generuje 3 stage, ktore beda dostępne podczas deploymentu
-        //void DrawSelected(Stage SelectedStage, Squad SelectedSquad); //wyswietla opisy w oparciu o PtrToSelectedStage
-        // i PtrToSelectedSquad oraz pozycje X:Y w oparciu o arraye StageMapPosition oraz SquadListPosition.
-
-
 };

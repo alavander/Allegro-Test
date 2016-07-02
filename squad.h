@@ -8,6 +8,7 @@ struct stats
     int hp;
     float speed;
     int gold_cost;
+    int honor_cost;
     std::string squad_name;
     int UNIT_TYPE;
 };
@@ -30,6 +31,7 @@ class Squad
         int level;                  //Poziom jednostki
         float experience;           //Punkty doswiadczenia ktore ma jednostka
         int gold_cost;              //Ile zlota kosztuje przywolanie jednej jednostki
+        int honor_cost;
         int FRACTION;
         //Taken from stats
         int damage;                 //Obrazenia ktore zadaje jednostka
@@ -64,6 +66,7 @@ class Squad
         float GetSpeed() {return speed;}
         int GetLevel() {return level;}
         int GetGoldCost() {return gold_cost;}
+        int GetHonorCost() {return honor_cost;}
         int GetDamage() {return damage;}
         int GetHp() {return hp;}
         int GetMaxFrame() {return maxFrame;}
@@ -76,12 +79,12 @@ class Squad
         int GetAttackDelay() {return attackDelay;}
         int GetIconNumber() {return icon_number;}
         std::string GetSquadName() {return squad_name;}
-        bool GetDeploying() {return isDeploying;}
-        void SetDeploying(bool isDeploying) {Squad::isDeploying = isDeploying;}
+        int GetDeploying() {return isDeploying;}
+        void SetDeploying(int isDeploying) {Squad::isDeploying = isDeploying;}
 
         //Other:
         bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.
         void UpdateStats(); //Updatuje staty(zmiany eq lub level upy)
-        bool isDeploying; //Jesli jest isDeploying to znika z listy do deploy
+        int isDeploying; //Jesli jest isDeploying to znika z listy do deploy
 };
 
