@@ -66,3 +66,4 @@ void Deployment::SelectSquadForDeployment(Squad *selectedSquad, int slot)
     break;
     }
 };
+

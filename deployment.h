@@ -32,4 +32,5 @@ class Deployment
         Squad GetSelectedSlot(int slot);//Aktualnie wybrany slot unita, do pobierania danych
         void SelectSquadForDeployment(Squad *selectedSquad, int slot);
 
+
 };

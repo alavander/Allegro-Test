@@ -28,14 +28,14 @@
 - Stage: A stage should also have enemy types and enemy hero type
 - Stage: A stage should have stage traits
 - Clearing not currently selected stages when going from deployment to stage
+- Cleaning currently selected stage when in menu screen
 - Player class, which holds the squad list variable, number of victories, number of defeats
 - Better main menu
-- Cleaning currently selected stage when in menu screen
-- Better UI for state playing
-- Add stage time pass as victory condition of siege (18000 is 5 minutes) (done)
-- Add enemy hero killing as base victory condition for hero hunting (done)
-- Add losing hero as base defeat condition in bloodbath and hero hunting (done)
-- Add hero at the base of level for Bloodbath and Hero Hunting. (done)
+- Changes to battle UI - icons should be more cramped, no names should be show, separate menu for showing
+    selected unit name and basic stats.
+- Hp bar if unit is not at 100% hp
+- Hero and enemy hero HP bars at top
+- Mouse control
 - Show gold or honor actually only if unit needs it.
 
 Code-tidying:
@@ -78,7 +78,7 @@ int StageTimeElapsed = 0;
 int STATE = MENU;
 
 /* Stage variables */
-int Stage::STAGE_VICTORY_CONDITION = SIEGE;
+int Stage::STAGE_VICTORY_CONDITION = HERO_HUNTING;
 int Stage::AftermatchStatus = UNRESOLVED;
 int Stage::lives = 5;
 int Stage::rareNumber = 0;
@@ -178,12 +178,12 @@ int main(int argc, char **argv)
     goblinImage = al_load_bitmap("Data/units/goblin_pillager.png");
     trollImage = al_load_bitmap("Data/units/troll.png");
     gnollImage = al_load_bitmap("Data/units/gnoll_axeman.png");
-    ogreImage = al_load_bitmap("Data/units/ogre_leader.png");
+    ogreImage = al_load_bitmap("Data/units/ogre_idle.png");
     skeletonImage = al_load_bitmap("Data/units/skeleton.png");
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats soldier_stat = {9, 15, 1.95, 10, 0, "Footman", COMMON};
+    stats soldier_stat = {9, 15, 1.95, 8, 0, "Footman", COMMON};
     animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
     AvailableSquads.push_back(soldier);
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
     AvailableSquads.push_back(gnoll_axeman);
     /*============================================================================*/
     stats ogre_stat = {25, 250, 1, 10, 0,"", LEGENDARY};
-    animation ogre_anim = {8, 4, 250, 200, 8, 12, ogreImage, 0};
+    animation ogre_anim = {8, 7, 250, 200, 8, 12, ogreImage, 0};
     Squad *ogre = new Squad(GREENSKINS, ogre_stat, ogre_anim);
     AvailableSquads.push_back(ogre);
     /*============================================================================*/
@@ -262,10 +262,20 @@ int main(int argc, char **argv)
                 else STATE = PAUSED;
                 break;
             case ALLEGRO_KEY_UP:
-                if (row_selected > 1) row_selected -= 1;
+                if (STATE == PLAYING)
+                    if (row_selected > 1) row_selected -= 1;
+                if (STATE == DEPLOYMENT)
+                {
+                    if(Stage::STAGE_VICTORY_CONDITION < 2) Stage::STAGE_VICTORY_CONDITION++;
+                }
                 break;
             case ALLEGRO_KEY_DOWN:
-                if (row_selected < 3 ) row_selected += 1;
+                if (STATE == PLAYING)
+                    if (row_selected < 3 ) row_selected += 1;
+                if (STATE == DEPLOYMENT)
+                {
+                    if(Stage::STAGE_VICTORY_CONDITION > 0) Stage::STAGE_VICTORY_CONDITION--;
+                }
                 break;
             case ALLEGRO_KEY_LEFT:
                 if (STATE == PLAYING || STATE == PAUSED || STATE == AFTERMATCH) cameraLeft = true;
@@ -528,19 +538,31 @@ int main(int argc, char **argv)
                     al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//tlo
                     al_draw_text(font18, al_map_rgb(255,255,255), 215, 5, ALLEGRO_ALIGN_CENTER, "Map" );
                     al_draw_bitmap(deployment_map,30,30,0);
+                    if(Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
+                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
+                         al_draw_text(font18, al_map_rgb(240,0,0), 270, 360, 0, "2. Bloodbath" );}
+                    if(Stage::STAGE_VICTORY_CONDITION == SIEGE)
+                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
+                         al_draw_text(font18, al_map_rgb(180,230,30), 270, 360, 0, "3. Siege" );}
+                    if(Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
+                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
+                         al_draw_text(font18, al_map_rgb(50,180,200), 270, 360, 0, "1. Hero Hunt" );}
+                    al_draw_text(font12, al_map_rgb(255,255,255), 230, 380, ALLEGRO_ALIGN_CENTER, "(Press up/down arrow to change mode)" );
                     al_draw_text(font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
+                    al_draw_text(font12, al_map_rgb(255,255,255), (460+750)/2, 25, ALLEGRO_ALIGN_CENTER, "(Press left/right to change)" );
                     al_draw_filled_rectangle(580, 500, 780, 530, al_map_rgb(255,255,255));//start button
                     al_draw_text(font18, al_map_rgb(0,0,0), (600+750)/2, 505, ALLEGRO_ALIGN_CENTER, "Start Mission" );
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 40, 0, "Squad Name: %s",(*sqiter)->GetSquadName().c_str());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 60, 0, "Level: %i (exp:%i)",(*sqiter)->GetLevel(),(int)(*sqiter)->GetSquadXP());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 80, 0, "ATK: %i",(*sqiter)->GetDamage());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 100, 0, "HP: %i",(*sqiter)->GetHp());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 120, 0, "SPEED: %f",(*sqiter)->GetSpeed());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 140, 0, "Gold Cost: %i",(*sqiter)->GetGoldCost());
+                    al_draw_text(font12, al_map_rgb(255,255,255), 680, 535, ALLEGRO_ALIGN_CENTER, "(Press spacebar to start)" );
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 50, 0, "Squad Name: %s",(*sqiter)->GetSquadName().c_str());
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 70, 0, "Level: %i (exp:%i)",(*sqiter)->GetLevel(),(int)(*sqiter)->GetSquadXP());
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 90, 0, "ATK: %i",(*sqiter)->GetDamage());
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 110, 0, "HP: %i",(*sqiter)->GetHp());
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 130, 0, "SPEED: %f",(*sqiter)->GetSpeed());
+                    al_draw_textf(font18, al_map_rgb(255,255,0), 460, 150, 0, "Gold Cost: %i",(*sqiter)->GetGoldCost());
                     if ((*sqiter)->GetHonorCost() > 0)
-                        al_draw_textf(font18, al_map_rgb(255,255,255), 460, 160, 0, "Honor Cost: %i",(*sqiter)->GetHonorCost());
+                        al_draw_textf(font18, al_map_rgb(255,200,0), 460, 170, 0, "Honor Cost: %i",(*sqiter)->GetHonorCost());
                     if ((*sqiter)->GetDeploying() > 0)
-                        al_draw_textf(font18, al_map_rgb(255,255,255), 460, 200, 0, "Unit is selected for slot: %i",(*sqiter)->GetDeploying());
+                        al_draw_textf(font18, al_map_rgb(255,255,255), 460, 190, 0, "Unit is selected for slot: %i",(*sqiter)->GetDeploying());
                     al_draw_text(font18, al_map_rgb(255,255,255), 460, 240, 0, "1.");
                     al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 480,240, 0);
                     al_draw_textf(font12, al_map_rgb(255,255,255), 530, 240, 0, "%s", Deployed.OccupiedSlot_1->GetSquadName().c_str());
@@ -561,15 +583,15 @@ int main(int argc, char **argv)
                         (*iter)->Render();
                     }
                     //Icons!
-                    al_draw_text(font18, al_map_rgb(255,255,255), 380, 570, 0, "1.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 400,560, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 420, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
-                    al_draw_text(font18, al_map_rgb(255,255,255), 480, 570, 0, "2.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 500,560, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 520, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
-                    al_draw_text(font18, al_map_rgb(255,255,255), 580, 570, 0, "3.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 600,560, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
+                    al_draw_text(font18, al_map_rgb(255,255,255), 300, 570, 0, "1.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 320,560, 0);
+                    //al_draw_textf(font12, al_map_rgb(255,255,255), 420, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
+                    al_draw_text(font18, al_map_rgb(255,255,255), 400, 570, 0, "2.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 420,560, 0);
+                    //al_draw_textf(font12, al_map_rgb(255,255,255), 520, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
+                    al_draw_text(font18, al_map_rgb(255,255,255), 500, 570, 0, "3.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 520,560, 0);
+                    //al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
                     al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
                     /* Row Selected Cursor */
                     al_draw_textf(font12, al_map_rgb(255,255,255), 5, 410+row_selected*20, 0,"%i. lane>", row_selected);

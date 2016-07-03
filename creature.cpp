@@ -150,6 +150,7 @@ void Creature::Render()
         //al_draw_ellipse(x-Stage::cameraX, PositionY(), 24, 10,al_map_rgb(0,225,0), 1);//Green Circle for Allies
         al_draw_bitmap_region(image, curFrame * frameWidth, (ANIMATION*frameHeight), frameWidth, frameHeight,
 		x - frameWidth / 2 -Stage::cameraX, PositionY(), 0);
+        //al_draw_line(x-Stage::cameraX, PositionY(), x-Stage::cameraX, PositionY(), al_map_rgb(240,0,0), 2);
     }
 }
 
