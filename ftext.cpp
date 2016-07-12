@@ -34,5 +34,5 @@ void Ftext::Render()
   int lenght = (abs(display) > 99 ? 22 : abs(display) > 9 ? 18 : 12);
   al_draw_textf(font, al_map_rgb(255, 255, 255), x, y, ALLEGRO_ALIGN_CENTRE , "%i", display);
   if (image != NULL || icon_type != 0)
-    al_draw_bitmap_region(image, 10*icon_type, 0, 10, 10, x+lenght, y+3, 0);
+    al_draw_bitmap_region(image, icon_type, 0, 10, 10, x+lenght, y+3, 0);
 }

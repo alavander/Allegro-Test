@@ -2,13 +2,29 @@
 
 Deployment::Deployment(Squad *slot1, Squad *slot2, Squad *slot3)
 {
+    //Bazowe wypelnienie slotow
     OccupiedSlot_1 = &*slot1;
     OccupiedSlot_1->SetDeploying(1);
     OccupiedSlot_2 = &*slot2;
     OccupiedSlot_2->SetDeploying(2);
     OccupiedSlot_3 = &*slot3;
     OccupiedSlot_3->SetDeploying(3);
+    //Generacja losowych misji
+    Stage * stage1 = new Stage();
+    Deployment::Pregen_Stage_1 = stage1;
+    Stage * stage2 = new Stage();
+    Deployment::Pregen_Stage_2 = stage2;
+    Stage * stage3 = new Stage();
+    Deployment::Pregen_Stage_3 = stage3;
+    Selected_Stage = Deployment::Pregen_Stage_1;
 };
+
+Deployment::~Deployment()
+{
+    delete Pregen_Stage_1;
+    delete Pregen_Stage_2;
+    delete Pregen_Stage_3;
+}
 
 GameObject * Deployment::SpawnUnit(int Selected_Row, int Selected_Slot)
 {
@@ -66,4 +82,3 @@ void Deployment::SelectSquadForDeployment(Squad *selectedSquad, int slot)
     break;
     }
 };
-

@@ -1,8 +1,17 @@
 #pragma once
+#include <string>
+#include "Const.h"
 
 class Stage
 {
     public:
+        std::string StageName;
+        int StageVictory;//0=hero,1=bloodbath,2=siege
+        int StageEnemy;//0=greenskins,1=undeads
+        int StageBackground;//0=forest,1=cave,2=swamp
+        int StageDiffaulty;//0=easy,1=medium,2=hard
+        Stage();
+        std::string GenerateStageName();
         /* Lives related */
         static int lives;
         static int GetStageLives() {return lives;}

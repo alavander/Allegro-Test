@@ -19,24 +19,32 @@
 #include "deployment.h"
 
 /*
-- Menu->Deployment: A stage list used to generate three stages for deployment screen
-- Deployment: A stage select, used to select one stage for playing
-- Deployment: Print if the unit is selected for a slot
+- Menu->Deployment: A stage list used to generate three stages for deployment screen (done)
+- Deployment: A stage select, used to select one stage for playing (done)
 - Deployment: When selecting a unit for slot, check if its present in other slots -
                 if yes, automatically de-select it from two other slots if its the same.
-- Stage: Stage should have: background, objectives, enemy type, diffaulty, description, picture
+- Stage: Stage should have: background, objectives, enemy type, diffaulty, description, picture (75% done)
 - Stage: A stage should also have enemy types and enemy hero type
 - Stage: A stage should have stage traits
-- Clearing not currently selected stages when going from deployment to stage
-- Cleaning currently selected stage when in menu screen
+- Cleaning currently selected stage when in menu screen(done)
 - Player class, which holds the squad list variable, number of victories, number of defeats
 - Better main menu
+- Options: music volume/turn music on/off
+- Change lanes name (top,middle,bottom)
+- ESC should ask if you wish to quit y/n, as well as pressing 'x'.
 - Changes to battle UI - icons should be more cramped, no names should be show, separate menu for showing
-    selected unit name and basic stats.
+    selected unit name and basic stats. (done)
 - Hp bar if unit is not at 100% hp
 - Hero and enemy hero HP bars at top
 - Mouse control
-- Show gold or honor actually only if unit needs it.
+- Show gold or honor actually only if unit needs it. (done)
+-       Combat Class -> Melee Combat, Ranged Combat, Special Skills Usage, Animation Change, Hp/Dam, Resists, Cooldowns
+        GUI Class, -> Button, Selection Window, Information Window
+        Input Class, -> Forwarding Pressed Keys/Buttons/Selection Windows to GameState Class
+        GameState Class, -> Playing(Paused bool), Menu, Deploying, Aftermatch
+        CombatStatus Class,-> Buff, Debuff
+        Message Class, -> Popup Window, Voice Information
+        Handler Class, -> Keeping all the game lists together to
 
 Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
@@ -45,7 +53,7 @@ Code-tidying:
 
 Classes:
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
-    select units and hero for the next mission. (50% DONE)
+    select units and hero for the next mission. (75% DONE)
 
 Alpha-level ToDo:
 - Attack speed should be a separate variable, and based on it, animations should be faster or slower.
@@ -93,6 +101,7 @@ Creature *ptr_to_enemy = NULL;
 /* Game Loop Functions */
 void Remove_objects(int remove_flag); //Usuwa obiekty w zaleznosci od parametru
 void Stage_init(); //Resetuje wartosci stage'a
+void PlaySelectedStage(Deployment * currently);
 
 int main(int argc, char **argv)
 {
@@ -162,7 +171,7 @@ int main(int argc, char **argv)
     /*MUSIC*/
     al_reserve_samples(1);
     /*GUI*/
-    bgImage = al_load_bitmap("Data/BG01.jpg");
+    bgImage = al_load_bitmap("Data/BG_forest.jpg");
     uiImage = al_load_bitmap("Data/background2.jpg");
     titleScreen = al_load_bitmap("Data/title_screen.png");
     heartIcon = al_load_bitmap("Data/heart_icon.png");
@@ -226,7 +235,7 @@ int main(int argc, char **argv)
     animation skel_anim = {7, 5, 150, 100, 7, 10, skeletonImage, 0};
     /*============================================================================*/
     sqiter = AvailableSquads.begin();
-    Deployment Deployed(soldier, barbarian, squire);
+    Deployment *Deployed = new Deployment(soldier, barbarian, squire);
 //==============================================
 //MUSIC
 //==============================================
@@ -258,15 +267,18 @@ int main(int argc, char **argv)
                 done = true;
                 break;
             case ALLEGRO_KEY_P:
+                if (STATE == PAUSED || STATE == PLAYING){
                 if (STATE == PAUSED) STATE = PLAYING;
-                else STATE = PAUSED;
+                else STATE = PAUSED;}
                 break;
             case ALLEGRO_KEY_UP:
                 if (STATE == PLAYING)
                     if (row_selected > 1) row_selected -= 1;
                 if (STATE == DEPLOYMENT)
                 {
-                    if(Stage::STAGE_VICTORY_CONDITION < 2) Stage::STAGE_VICTORY_CONDITION++;
+                    if (Deployed->Selected_Stage == Deployed->Pregen_Stage_1) Deployed->Selected_Stage = Deployed->Pregen_Stage_2;
+                    else if (Deployed->Selected_Stage == Deployed->Pregen_Stage_2) Deployed->Selected_Stage = Deployed->Pregen_Stage_3;
+                    //if(Stage::STAGE_VICTORY_CONDITION < 2) Stage::STAGE_VICTORY_CONDITION++;
                 }
                 break;
             case ALLEGRO_KEY_DOWN:
@@ -274,7 +286,9 @@ int main(int argc, char **argv)
                     if (row_selected < 3 ) row_selected += 1;
                 if (STATE == DEPLOYMENT)
                 {
-                    if(Stage::STAGE_VICTORY_CONDITION > 0) Stage::STAGE_VICTORY_CONDITION--;
+                    if (Deployed->Selected_Stage == Deployed->Pregen_Stage_3) Deployed->Selected_Stage = Deployed->Pregen_Stage_2;
+                    else if (Deployed->Selected_Stage == Deployed->Pregen_Stage_2) Deployed->Selected_Stage = Deployed->Pregen_Stage_1;
+                    //if(Stage::STAGE_VICTORY_CONDITION > 0) Stage::STAGE_VICTORY_CONDITION--;
                 }
                 break;
             case ALLEGRO_KEY_LEFT:
@@ -310,8 +324,8 @@ int main(int argc, char **argv)
                     //if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_2->GetSquadName() ||
                     //   (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_3->GetSquadName())
                     //{
-                    Deployed.OccupiedSlot_1->SetDeploying(0);
-                    Deployed.SelectSquadForDeployment((*sqiter), 1);
+                    Deployed->OccupiedSlot_1->SetDeploying(0);
+                    Deployed->SelectSquadForDeployment((*sqiter), 1);
                     (*sqiter)->SetDeploying(1);
                     //}
                 }
@@ -323,8 +337,8 @@ int main(int argc, char **argv)
                    // if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_1->GetSquadName() ||
                     //   (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_3->GetSquadName())
                     //{
-                    Deployed.OccupiedSlot_2->SetDeploying(0);
-                    Deployed.SelectSquadForDeployment((*sqiter), 2);
+                    Deployed->OccupiedSlot_2->SetDeploying(0);
+                    Deployed->SelectSquadForDeployment((*sqiter), 2);
                     (*sqiter)->SetDeploying(2);
                    // }
                 }
@@ -336,8 +350,8 @@ int main(int argc, char **argv)
                    // if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_1->GetSquadName() ||
                    //    (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_2->GetSquadName())
                    // {
-                    Deployed.OccupiedSlot_3->SetDeploying(0);
-                    Deployed.SelectSquadForDeployment((*sqiter), 3);
+                    Deployed->OccupiedSlot_3->SetDeploying(0);
+                    Deployed->SelectSquadForDeployment((*sqiter), 3);
                     (*sqiter)->SetDeploying(3);
                    // }
                 }
@@ -350,8 +364,13 @@ int main(int argc, char **argv)
                 }
                 if (STATE == DEPLOYMENT )
                 {
-                    STATE = PLAYING;
                     Stage_init();
+                    if (Deployed->Selected_Stage->StageBackground == 0) bgImage = al_load_bitmap("Data/BG_forest.jpg");
+                    else if (Deployed->Selected_Stage->StageBackground == 1) bgImage = al_load_bitmap("Data/BG_cave.jpg");
+                    else bgImage = al_load_bitmap("Data/BG_swamp.jpg");
+                    PlaySelectedStage(Deployed);
+                    STATE = PLAYING;
+
                     al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
                         if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
                         {
@@ -374,15 +393,17 @@ int main(int argc, char **argv)
                 {
                     Remove_objects(allObj);
                     STATE = MENU;
+                    delete Deployed;
+                    Deployment *Deployed = new Deployment(soldier, barbarian, squire);
                     break;
                 }
                 if (STATE == PLAYING)
                 {
-                    int gold_cost = Deployed.GetSelectedSlot(unit_selected).GetGoldCost();
-                    int honor_cost = Deployed.GetSelectedSlot(unit_selected).GetHonorCost();
+                    int gold_cost = Deployed->GetSelectedSlot(unit_selected).GetGoldCost();
+                    int honor_cost = Deployed->GetSelectedSlot(unit_selected).GetHonorCost();
                     if (Stage::GetStageGold() >= gold_cost && Stage::GetStageHonor() >= honor_cost)
                     {
-                        objects.push_back(Deployed.SpawnUnit(row_selected, unit_selected));
+                        objects.push_back(Deployed->SpawnUnit(row_selected, unit_selected));
                         Stage::SpendGold(gold_cost);
                         Ftext *text = new Ftext(250, 545, -0.5, -(gold_cost), 45, font18, icons, Gold);
                         objects.push_back(text);
@@ -536,18 +557,38 @@ int main(int argc, char **argv)
                 if (STATE == DEPLOYMENT)
                 {
                     al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//tlo
+                    /* STAGE SELECT AND DRAWING */
                     al_draw_text(font18, al_map_rgb(255,255,255), 215, 5, ALLEGRO_ALIGN_CENTER, "Map" );
                     al_draw_bitmap(deployment_map,30,30,0);
-                    if(Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
-                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
-                         al_draw_text(font18, al_map_rgb(240,0,0), 270, 360, 0, "2. Bloodbath" );}
-                    if(Stage::STAGE_VICTORY_CONDITION == SIEGE)
-                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
-                         al_draw_text(font18, al_map_rgb(180,230,30), 270, 360, 0, "3. Siege" );}
-                    if(Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
-                        {al_draw_text(font18, al_map_rgb(255,255,255), 150, 360, ALLEGRO_ALIGN_CENTER, "Current stage mode:" );
-                         al_draw_text(font18, al_map_rgb(50,180,200), 270, 360, 0, "1. Hero Hunt" );}
-                    al_draw_text(font12, al_map_rgb(255,255,255), 230, 380, ALLEGRO_ALIGN_CENTER, "(Press up/down arrow to change mode)" );
+                    al_draw_textf(font18,al_map_rgb(50,200,250), 220, 360, ALLEGRO_ALIGN_CENTER, "%s", (Deployed->Selected_Stage->StageName).c_str());
+                    al_draw_text(font12, al_map_rgb(255,255,255), 230, 380, ALLEGRO_ALIGN_CENTER, "(Press up/down arrow to change map)" );
+                    al_draw_text(font18, al_map_rgb(255,255,255), 20, 420, 0, "Stage mode:" );
+                    if(Deployed->Selected_Stage->StageVictory == 0)
+                         al_draw_text(font18, al_map_rgb(50,180,200), 270, 420, 0, "Hero Hunt" );
+                    if(Deployed->Selected_Stage->StageVictory == 1)
+                         al_draw_text(font18, al_map_rgb(240,0,0), 270, 420, 0, "Bloodbath");
+                    if(Deployed->Selected_Stage->StageVictory == 2)
+                         al_draw_text(font18, al_map_rgb(180,230,30), 270, 420, 0, "Siege" );
+                    al_draw_text(font18, al_map_rgb(255,255,255), 20, 450, 0, "Stage enemy:" );
+                    if(Deployed->Selected_Stage->StageEnemy == 0)
+                         al_draw_text(font18, al_map_rgb(180,230,30), 270, 450, 0, "Greenskins" );
+                    if(Deployed->Selected_Stage->StageEnemy == 1)
+                         al_draw_text(font18, al_map_rgb(160,160,160), 270, 450, 0, "Undead");
+                    al_draw_text(font18, al_map_rgb(255,255,255), 20, 480, 0, "Stage map:" );
+                    if(Deployed->Selected_Stage->StageBackground == 0)
+                         al_draw_text(font18, al_map_rgb(180,230,30), 270, 480, 0, "Forest" );
+                    if(Deployed->Selected_Stage->StageBackground == 1)
+                         al_draw_text(font18, al_map_rgb(160,160,160), 270, 480, 0, "Cave");
+                    if(Deployed->Selected_Stage->StageBackground == 2)
+                         al_draw_text(font18, al_map_rgb(35,170,80), 270, 480, 0, "Swamp" );
+                    al_draw_text(font18, al_map_rgb(255,255,255), 20, 510, 0, "Stage difficulty:" );
+                    if(Deployed->Selected_Stage->StageDiffaulty == 0)
+                         al_draw_text(font18, al_map_rgb(150,200,240), 270, 510, 0, "Easy" );
+                    if(Deployed->Selected_Stage->StageDiffaulty == 1)
+                         al_draw_text(font18, al_map_rgb(250,250,130), 270, 510, 0, "Normal");
+                    if(Deployed->Selected_Stage->StageDiffaulty == 2)
+                         al_draw_text(font18, al_map_rgb(255,0,0), 270, 510, 0, "Hard" );
+                    /* SQUAD SELECT AND DRAWING */
                     al_draw_text(font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
                     al_draw_text(font12, al_map_rgb(255,255,255), (460+750)/2, 25, ALLEGRO_ALIGN_CENTER, "(Press left/right to change)" );
                     al_draw_filled_rectangle(580, 500, 780, 530, al_map_rgb(255,255,255));//start button
@@ -564,14 +605,14 @@ int main(int argc, char **argv)
                     if ((*sqiter)->GetDeploying() > 0)
                         al_draw_textf(font18, al_map_rgb(255,255,255), 460, 190, 0, "Unit is selected for slot: %i",(*sqiter)->GetDeploying());
                     al_draw_text(font18, al_map_rgb(255,255,255), 460, 240, 0, "1.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 480,240, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 240, 0, "%s", Deployed.OccupiedSlot_1->GetSquadName().c_str());
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_1->GetIconNumber(), 0,40, 40, 480,240, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 240, 0, "%s", Deployed->OccupiedSlot_1->GetSquadName().c_str());
                     al_draw_text(font18, al_map_rgb(255,255,255), 460, 300, 0, "2.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 480,300, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 300, 0, "%s", Deployed.OccupiedSlot_2->GetSquadName().c_str());
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_2->GetIconNumber(), 0,40, 40, 480,300, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 300, 0, "%s", Deployed->OccupiedSlot_2->GetSquadName().c_str());
                     al_draw_text(font18, al_map_rgb(255,255,255), 460, 360, 0, "3.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 480,360, 0);
-                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 360, 0, "%s", Deployed.OccupiedSlot_3->GetSquadName().c_str());
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_3->GetIconNumber(), 0,40, 40, 480,360, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 530, 360, 0, "%s", Deployed->OccupiedSlot_3->GetSquadName().c_str());
                 }
                 if (STATE == PLAYING || STATE == PAUSED || STATE == AFTERMATCH )
                 {
@@ -582,32 +623,50 @@ int main(int argc, char **argv)
                     {
                         (*iter)->Render();
                     }
-                    //Icons!
-                    al_draw_text(font18, al_map_rgb(255,255,255), 300, 570, 0, "1.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_1->GetIconNumber(), 0,40, 40, 320,560, 0);
-                    //al_draw_textf(font12, al_map_rgb(255,255,255), 420, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_1->GetSquadName().c_str(),Deployed.OccupiedSlot_1->GetGoldCost());
-                    al_draw_text(font18, al_map_rgb(255,255,255), 400, 570, 0, "2.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_2->GetIconNumber(), 0,40, 40, 420,560, 0);
-                    //al_draw_textf(font12, al_map_rgb(255,255,255), 520, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_2->GetSquadName().c_str(),Deployed.OccupiedSlot_2->GetGoldCost());
-                    al_draw_text(font18, al_map_rgb(255,255,255), 500, 570, 0, "3.");
-                    al_draw_bitmap_region(unit_icon, 40*Deployed.OccupiedSlot_3->GetIconNumber(), 0,40, 40, 520,560, 0);
-                    //al_draw_textf(font12, al_map_rgb(255,255,255), 620, 540, ALLEGRO_ALIGN_CENTER, "%s(%i)", Deployed.OccupiedSlot_3->GetSquadName().c_str(),Deployed.OccupiedSlot_3->GetGoldCost());
-                    al_draw_rectangle(300+unit_selected*100,560,340+unit_selected*100,600, al_map_rgb(255, 240, 0), 1);
+                    //Icons, position and costs!
+                    al_draw_text(font18, al_map_rgb(255,255,255), 300, 555, 0, "1.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_1->GetIconNumber(), 0,40, 40, 320,545, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 365, 550, 0, "%i", Deployed->OccupiedSlot_1->GetGoldCost());
+                    al_draw_bitmap_region(icons, Gold, 0, 10, 10, Deployed->OccupiedSlot_1->GetGoldCost() < 10 ? 375 : 382, 550, 0);
+                    if(Deployed->OccupiedSlot_1->GetHonorCost() > 0){
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 365, 570, 0, "%i", Deployed->OccupiedSlot_1->GetHonorCost());
+                    al_draw_bitmap_region(icons, Honor, 0, 10, 10, Deployed->OccupiedSlot_1->GetHonorCost() < 10 ? 375 : 382, 570, 0);}
+                    al_draw_text(font18, al_map_rgb(255,255,255), 400, 555, 0, "2.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_2->GetIconNumber(), 0,40, 40, 420,545, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 465, 550, 0, "%i", Deployed->OccupiedSlot_2->GetGoldCost());
+                    al_draw_bitmap_region(icons, Gold, 0, 10, 10, Deployed->OccupiedSlot_2->GetGoldCost() < 10 ? 475 : 482, 550, 0);
+                    if(Deployed->OccupiedSlot_2->GetHonorCost() > 0){
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 465, 570, 0, "%i", Deployed->OccupiedSlot_2->GetHonorCost());
+                    al_draw_bitmap_region(icons, Honor, 0, 10, 10, Deployed->OccupiedSlot_2->GetHonorCost() < 10 ? 475 : 482, 570, 0);}
+                    al_draw_text(font18, al_map_rgb(255,255,255), 500, 555, 0, "3.");
+                    al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_3->GetIconNumber(), 0,40, 40, 520,545, 0);
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 565, 550, 0, "%i", Deployed->OccupiedSlot_3->GetGoldCost());
+                    al_draw_bitmap_region(icons, Gold, 0, 10, 10, Deployed->OccupiedSlot_3->GetGoldCost() < 10 ? 575 : 582, 550, 0);
+                    if(Deployed->OccupiedSlot_3->GetHonorCost() > 0){
+                    al_draw_textf(font12, al_map_rgb(255,255,255), 565, 570, 0, "%i", Deployed->OccupiedSlot_3->GetHonorCost());
+                    al_draw_bitmap_region(icons, Honor, 0, 10, 10, Deployed->OccupiedSlot_3->GetHonorCost() < 10 ? 575 : 582, 570, 0);}
+                    /* Basic Selected unit stats*/
+                    al_draw_textf(font12,al_map_rgb(255,255,255),650, 540, 0,"%s",(Deployed->GetSelectedSlot(unit_selected).GetSquadName()).c_str());
+                    al_draw_textf(font12,al_map_rgb(255,255,255),640, 555, 0,"Level: %i",Deployed->GetSelectedSlot(unit_selected).GetLevel());
+                    al_draw_textf(font12,al_map_rgb(255,255,255),640, 570, 0,"Attack: %i",Deployed->GetSelectedSlot(unit_selected).GetDamage());
+                    al_draw_textf(font12,al_map_rgb(255,255,255),640, 585, 0,"Health: %i",Deployed->GetSelectedSlot(unit_selected).GetHp());
+                    /* Unit Selection Box */
+                    al_draw_rectangle(220+unit_selected*100,545,260+unit_selected*100,585, al_map_rgb(255, 240, 0), 1);
                     /* Row Selected Cursor */
                     al_draw_textf(font12, al_map_rgb(255,255,255), 5, 410+row_selected*20, 0,"%i. lane>", row_selected);
-                    /* UI text */
+                    /* UI text + small debug*/
                     if (STATE == PAUSED)
                     {
                         al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE, "Game Paused");
                         //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTRE, "Enemy Rare count: %i", Stage::GetRareNumber());
                         //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 70, ALLEGRO_ALIGN_CENTRE, "Enemy Uncommon count: %i", Stage::GetUncommonNumber());
-                        al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 90, ALLEGRO_ALIGN_CENTRE, "Stage Time Elapsed: %i", StageTimeElapsed);
-                        al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 110, ALLEGRO_ALIGN_CENTRE, "Objectives Count: %i", Stage::GetObjectivesCount());
+                        //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 90, ALLEGRO_ALIGN_CENTRE, "Stage Time Elapsed: %i", StageTimeElapsed);
+                        //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 110, ALLEGRO_ALIGN_CENTRE, "Objectives Count: %i", Stage::GetObjectivesCount());
                     }
                     al_draw_textf(font18, al_map_rgb(240, 180, 0), SCREEN_WIDTH/5, 545, ALLEGRO_ALIGN_CENTRE, "Gold: %i", (int)Stage::GetStageGold());
-                    al_draw_bitmap_region(icons, 20, 0, 10, 10, SCREEN_WIDTH/5+60, 545, 0);
+                    al_draw_bitmap_region(icons, Gold, 0, 10, 10, SCREEN_WIDTH/5+60, 545, 0);
                     al_draw_textf(font18, al_map_rgb(255,255,255), SCREEN_WIDTH/5, 570, ALLEGRO_ALIGN_CENTRE, "Honor: %i", Stage::GetStageHonor());
-                    al_draw_bitmap_region(icons, 30, 0, 10, 10, SCREEN_WIDTH/5+60, 570, 0);
+                    al_draw_bitmap_region(icons, Honor, 0, 10, 10, SCREEN_WIDTH/5+60, 570, 0);
 
                     if (Stage::STAGE_VICTORY_CONDITION == SIEGE)
                     {
@@ -692,6 +751,7 @@ int main(int argc, char **argv)
     al_destroy_event_queue(event_queue);
     al_destroy_display(display);
     al_destroy_sample(song);
+    delete Deployed;
 
     return 0;
 }
@@ -742,16 +802,23 @@ void Remove_objects(int remove_flag)
 
 void Stage_init() // Przeniesc jako metode do stage.h
 {
-    Stage::lives = 5;
+    StageTimeElapsed = 0;
+    Creature *ptr_to_hero = nullptr;
+    Creature *ptr_to_enemy = nullptr;
+}
+
+void PlaySelectedStage(Deployment * currently)
+{
+    /*Victory condition*/
+    if (currently->Selected_Stage->StageVictory == 0) Stage::STAGE_VICTORY_CONDITION = HERO_HUNTING;
+    else if (currently->Selected_Stage->StageVictory == 1) Stage::STAGE_VICTORY_CONDITION = BLOODBATH;
+    else Stage::STAGE_VICTORY_CONDITION = SIEGE;
+    Stage::gold = 100 - currently->Selected_Stage->StageDiffaulty*10; //-10 gold for normal, -20 gold for hard
+    Stage::lives = 5 - currently->Selected_Stage->StageDiffaulty;//-1 lives for normal, -2 lives for hard
     Stage::rareNumber = 0;
     Stage::uncommonNumber = 0;
     Stage::ObjectivesCount = 0;
     Stage::cameraX = 0;
-    Stage::gold = 100;
     Stage::honor = 0;
-    StageTimeElapsed = 0;
-    STATE = PLAYING;
     Stage::SetAftermatchStatus(UNRESOLVED);
-    Creature *ptr_to_hero = NULL;
-    Creature *ptr_to_enemy = NULL;
-}
+};

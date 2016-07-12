@@ -1,5 +1,6 @@
 #pragma once
 #include "objects.h"
+#include "stage.h"
 #include <allegro5/allegro_font.h>
 
 class Ftext : public GameObject
