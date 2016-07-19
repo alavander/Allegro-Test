@@ -1,12 +1,12 @@
 #include "stage.h"
 
-Stage::Stage()
+Stage::Stage(int diff)
 {
          int random_seed = rand() % 100000;
          StageVictory = random_seed % 3;     //0=hero,1=bloodbath,2=siege
          StageEnemy = random_seed % 2;       //0=greenskins,1=undeads
          StageBackground = random_seed % 3;  //0=forest,1=cave,2=swamp
-         StageDiffaulty = random_seed % 3;   //0=easy,1=medium,2=hard
+         StageDiffaulty = diff;   //0=easy,1=medium,2=hard
          StageName = GenerateStageName();
 }
 
@@ -16,13 +16,13 @@ std::string Stage::GenerateStageName()
     switch(StageDiffaulty)
     {
         case 0:
-        first = "Beginners ";
+        first = "Beginners ";//easy
         break;
         case 1:
-        first = "Intermediate ";
+        first = "Intermediate ";//normal
         break;
         case 2:
-        first = "Deadly ";
+        first = "Deadly ";//hard
         break;
         default:
         break;
@@ -44,13 +44,13 @@ std::string Stage::GenerateStageName()
     switch(StageVictory)
     {
         case 0:
-        third = "hunt ";
+        third = "hunt ";//hero hunt
         break;
         case 1:
-        third = "skirmish ";
+        third = "skirmish ";//bloodbath
         break;
         case 2:
-        third = "defence ";
+        third = "defence ";//siege
         break;
         default:
         break;
@@ -58,10 +58,10 @@ std::string Stage::GenerateStageName()
     switch(StageEnemy)
     {
         case 0:
-        forth = "of blood";
+        forth = "of blood";//greenskin
         break;
         case 1:
-        forth = "of death";
+        forth = "of death";//undead
         break;
         default:
         break;

@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 /* Local Includes */
+#include "game_state.h"
 #include "objects.h"
 #include "creature.h"
 #include "Const.h"
@@ -19,32 +20,27 @@
 #include "deployment.h"
 
 /*
-- Menu->Deployment: A stage list used to generate three stages for deployment screen (done)
-- Deployment: A stage select, used to select one stage for playing (done)
 - Deployment: When selecting a unit for slot, check if its present in other slots -
                 if yes, automatically de-select it from two other slots if its the same.
 - Stage: Stage should have: background, objectives, enemy type, diffaulty, description, picture (75% done)
 - Stage: A stage should also have enemy types and enemy hero type
 - Stage: A stage should have stage traits
 - Cleaning currently selected stage when in menu screen(done)
-- Player class, which holds the squad list variable, number of victories, number of defeats
-- Better main menu
+- Better menu screen
+- Pre-Gen stages should be of three different diffaulty: easy, medium, hard(done)
+- Stages should have stage level (on which we will base enemy stats)
+- Hero should be able to level up and spend skill points on skills, in separate window
+- Add talents(passive specials), which will be available directly from squad - a list, or array of talents, which will modify the way the game plays
+- Add skills(active specials), which can be used by creatures, and have a cooldown assiocated with them
+- Add Exp. reward to stages
+- Show the stage location on map (GUI)
 - Options: music volume/turn music on/off
 - Change lanes name (top,middle,bottom)
 - ESC should ask if you wish to quit y/n, as well as pressing 'x'.
-- Changes to battle UI - icons should be more cramped, no names should be show, separate menu for showing
-    selected unit name and basic stats. (done)
 - Hp bar if unit is not at 100% hp
 - Hero and enemy hero HP bars at top
 - Mouse control
-- Show gold or honor actually only if unit needs it. (done)
--       Combat Class -> Melee Combat, Ranged Combat, Special Skills Usage, Animation Change, Hp/Dam, Resists, Cooldowns
-        GUI Class, -> Button, Selection Window, Information Window
-        Input Class, -> Forwarding Pressed Keys/Buttons/Selection Windows to GameState Class
-        GameState Class, -> Playing(Paused bool), Menu, Deploying, Aftermatch
-        CombatStatus Class,-> Buff, Debuff
-        Message Class, -> Popup Window, Voice Information
-        Handler Class, -> Keeping all the game lists together to
+
 
 Code-tidying:
 - Wrapping loading assess into functions/classes (loading at beginning, deleting at end)
@@ -54,6 +50,16 @@ Code-tidying:
 Classes:
 - Implement Deployment Class - a new deployment UI with options to list all squads, see their stats,
     select units and hero for the next mission. (75% DONE)
+        Combat Class -> Melee Combat, Ranged Combat, Unit Special Skills Usage, Hp/Dam, Resists, Cooldowns (singleton)
+        *GUI Class, -> Button, Selection Window, Information Window (singleton)
+        Input Class, -> Forwarding Pressed Keys/Buttons/Selection Windows to GameState Class (singleton)
+      -=GameState Class, -> Playing(Paused - bool), Menu, Deploying, Aftermatch (done)=-
+        CombatStatus Class,-> Combat Buff, Debuff
+        Message Class, -> Popup Windows
+        *Handler Class, -> Keeping all the game lists together (singleton)
+        Player Class,-> Number of victories, Number of defeats, achivements/unlocks (singleton)
+                        using hero special abilities, hero leveling (singleton)
+        Audio Class,-> Playing, Stopping sounds and music, audio options (singleton)
 
 Alpha-level ToDo:
 - Attack speed should be a separate variable, and based on it, animations should be faster or slower.
@@ -83,7 +89,7 @@ int unit_selected = 1;
 bool cameraLeft = false;
 bool cameraRight = false;
 int StageTimeElapsed = 0;
-int STATE = MENU;
+bool sound_enabled = true;
 
 /* Stage variables */
 int Stage::STAGE_VICTORY_CONDITION = HERO_HUNTING;
@@ -95,8 +101,8 @@ int Stage::ObjectivesCount = 0;
 int Stage::cameraX = 0;
 float Stage::gold = 100;
 int Stage::honor = 0;
-Creature *ptr_to_hero = NULL;
-Creature *ptr_to_enemy = NULL;
+Creature *ptr_to_hero;
+Creature *ptr_to_enemy;
 
 /* Game Loop Functions */
 void Remove_objects(int remove_flag); //Usuwa obiekty w zaleznosci od parametru
@@ -122,6 +128,9 @@ int main(int argc, char **argv)
     ALLEGRO_BITMAP *gnollImage = NULL;
     ALLEGRO_BITMAP *ogreImage = NULL;
     ALLEGRO_BITMAP *skeletonImage = NULL;
+    ALLEGRO_BITMAP *ghoulImage = NULL;
+    ALLEGRO_BITMAP *wraithImage = NULL;
+    ALLEGRO_BITMAP *necroImage = NULL;
     ALLEGRO_BITMAP *bgImage = NULL;
     ALLEGRO_BITMAP *uiImage = NULL;
     ALLEGRO_BITMAP *titleScreen = NULL;
@@ -189,10 +198,13 @@ int main(int argc, char **argv)
     gnollImage = al_load_bitmap("Data/units/gnoll_axeman.png");
     ogreImage = al_load_bitmap("Data/units/ogre_idle.png");
     skeletonImage = al_load_bitmap("Data/units/skeleton.png");
+    ghoulImage = al_load_bitmap("Data/units/ghoul.png");
+    wraithImage = al_load_bitmap("Data/units/wraith.png");
+    necroImage = al_load_bitmap("Data/units/necromancer.png");
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats soldier_stat = {9, 15, 1.95, 8, 0, "Footman", COMMON};
+    stats soldier_stat = {9, 19, 1.95, 8, 0, "Footman", COMMON};
     animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
     AvailableSquads.push_back(soldier);
@@ -207,7 +219,7 @@ int main(int argc, char **argv)
     Squad *hero = new Squad(DWARFKIN, hero_stat, hero_anim);
     AvailableSquads.push_back(hero);
     /*============================================================================*/
-    stats squire_stat = {16, 70, 1.6, 30, 4, "Squire", RARE};
+    stats squire_stat = {14, 74, 1.6, 30, 4, "Squire", RARE};
     animation squire_anim = {7, 7, 200, 100, 7, 10, squireImage, 3};
     Squad *squire = new Squad(DWARFKIN, squire_stat, squire_anim);
     AvailableSquads.push_back(squire);
@@ -227,14 +239,40 @@ int main(int argc, char **argv)
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
     AvailableSquads.push_back(gnoll_axeman);
     /*============================================================================*/
-    stats ogre_stat = {25, 250, 1, 10, 0,"", LEGENDARY};
+    stats ogre_stat = {25, 250, 1, 0, 0,"", LEGENDARY};
     animation ogre_anim = {8, 7, 250, 200, 8, 12, ogreImage, 0};
     Squad *ogre = new Squad(GREENSKINS, ogre_stat, ogre_anim);
     AvailableSquads.push_back(ogre);
     /*============================================================================*/
     animation skel_anim = {7, 5, 150, 100, 7, 10, skeletonImage, 0};
+    stats skel_stat = {9, 8, 2.6, 0, 0, "", COMMON};
+    Squad *skeleton = new Squad(UNDEADS, skel_stat, skel_anim);
+    AvailableSquads.push_back(skeleton);
+    /*============================================================================*/
+    animation ghoul_anim = {6, 6, 140, 90, 6, 14, ghoulImage, 0};
+    stats ghoul_stat = {9, 32, 1.4, 0, 0, "", UNCOMMON};
+    Squad *ghoul = new Squad(UNDEADS, ghoul_stat, ghoul_anim);
+    AvailableSquads.push_back(ghoul);
+    /*============================================================================*/
+    animation wraith_anim = {6, 7, 200, 130, 6, 12, wraithImage, 0};
+    stats wraith_stat = {19, 28, 3, 0, 0, "", RARE};
+    Squad *wraith = new Squad(UNDEADS, wraith_stat, wraith_anim);
+    AvailableSquads.push_back(wraith);
+    /*============================================================================*/
+    animation necro_anim = {6, 8, 176, 120, 6, 12, necroImage, 0};
+    stats necro_stats = {35, 195, 2, 0, 0, "", LEGENDARY};
+    Squad *necromancer = new Squad(UNDEADS, necro_stats, necro_anim);
+    AvailableSquads.push_back(necromancer);
     /*============================================================================*/
     sqiter = AvailableSquads.begin();
+//==============================================
+//INITIALIZATING RANDOM SEED
+//==============================================
+    srand(time(NULL));
+//==============================================
+//INITIALIZATING INITIAL SETUP
+//==============================================
+    GameState State;
     Deployment *Deployed = new Deployment(soldier, barbarian, squire);
 //==============================================
 //MUSIC
@@ -243,7 +281,6 @@ int main(int argc, char **argv)
 //==============================================
 //TIMER INIT AND STARTUP
 //==============================================
-    srand(time(NULL));
     event_queue = al_create_event_queue();
     timer = al_create_timer(1.0 / 60);
 
@@ -267,33 +304,35 @@ int main(int argc, char **argv)
                 done = true;
                 break;
             case ALLEGRO_KEY_P:
-                if (STATE == PAUSED || STATE == PLAYING){
-                if (STATE == PAUSED) STATE = PLAYING;
-                else STATE = PAUSED;}
+                if (State.GetState() == PLAYING){
+                if (State.GamePaused() == true) State.SetPause(false);
+                else State.SetPause(true);}
+                break;
+            case ALLEGRO_KEY_M:
+                if(sound_enabled == true) sound_enabled = false;
+                else sound_enabled = true;
                 break;
             case ALLEGRO_KEY_UP:
-                if (STATE == PLAYING)
+                if (State.GetState() == PLAYING)
                     if (row_selected > 1) row_selected -= 1;
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                     if (Deployed->Selected_Stage == Deployed->Pregen_Stage_1) Deployed->Selected_Stage = Deployed->Pregen_Stage_2;
                     else if (Deployed->Selected_Stage == Deployed->Pregen_Stage_2) Deployed->Selected_Stage = Deployed->Pregen_Stage_3;
-                    //if(Stage::STAGE_VICTORY_CONDITION < 2) Stage::STAGE_VICTORY_CONDITION++;
                 }
                 break;
             case ALLEGRO_KEY_DOWN:
-                if (STATE == PLAYING)
+                if (State.GetState() == PLAYING)
                     if (row_selected < 3 ) row_selected += 1;
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                     if (Deployed->Selected_Stage == Deployed->Pregen_Stage_3) Deployed->Selected_Stage = Deployed->Pregen_Stage_2;
                     else if (Deployed->Selected_Stage == Deployed->Pregen_Stage_2) Deployed->Selected_Stage = Deployed->Pregen_Stage_1;
-                    //if(Stage::STAGE_VICTORY_CONDITION > 0) Stage::STAGE_VICTORY_CONDITION--;
                 }
                 break;
             case ALLEGRO_KEY_LEFT:
-                if (STATE == PLAYING || STATE == PAUSED || STATE == AFTERMATCH) cameraLeft = true;
-                if (STATE == DEPLOYMENT)//wybor squada podczas deploymentu
+                if (State.GetState() == PLAYING || State.GetState() == AFTERMATCH) cameraLeft = true;
+                if (State.GetState() == DEPLOYMENT)//wybor squada podczas deploymentu
                 {
                     if (sqiter == AvailableSquads.begin()) sqiter = std::prev(std::prev(AvailableSquads.end()));
                     else sqiter--;
@@ -305,8 +344,8 @@ int main(int argc, char **argv)
                 }
                 break;
             case ALLEGRO_KEY_RIGHT:
-                if (STATE == PLAYING || STATE == PAUSED || STATE == AFTERMATCH)cameraRight = true;
-                if (STATE == DEPLOYMENT)//Wybor squada podczas deploymentu
+                if (State.GetState() == PLAYING || State.GetState() == AFTERMATCH)cameraRight = true;
+                if (State.GetState() == DEPLOYMENT)//Wybor squada podczas deploymentu
                 {
                     if (sqiter == std::prev(std::prev(AvailableSquads.end()))) sqiter = AvailableSquads.begin();
                     else sqiter++;
@@ -319,7 +358,7 @@ int main(int argc, char **argv)
                 break;
             case ALLEGRO_KEY_1:
                 unit_selected = 1;
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                     //if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_2->GetSquadName() ||
                     //   (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_3->GetSquadName())
@@ -332,7 +371,7 @@ int main(int argc, char **argv)
                 break;
             case ALLEGRO_KEY_2:
                 unit_selected = 2;
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                    // if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_1->GetSquadName() ||
                     //   (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_3->GetSquadName())
@@ -345,7 +384,7 @@ int main(int argc, char **argv)
                 break;
             case ALLEGRO_KEY_3:
                 unit_selected = 3;
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                    // if((*sqiter)->GetSquadName() != Deployed.OccupiedSlot_1->GetSquadName() ||
                    //    (*sqiter)->GetSquadName() != Deployed.OccupiedSlot_2->GetSquadName())
@@ -357,19 +396,19 @@ int main(int argc, char **argv)
                 }
                 break;
             case ALLEGRO_KEY_SPACE:
-                if (STATE == MENU )
+                if (State.GetState() == MENU )
                 {
-                    STATE = DEPLOYMENT;
+                    State.ChangeState(DEPLOYMENT);
                     break;
                 }
-                if (STATE == DEPLOYMENT )
+                if (State.GetState() == DEPLOYMENT )
                 {
                     Stage_init();
-                    if (Deployed->Selected_Stage->StageBackground == 0) bgImage = al_load_bitmap("Data/BG_forest.jpg");
+                    if (Deployed->Selected_Stage->StageBackground == 0) bgImage = al_load_bitmap("Data/BG_forest.jpg"); //Przeniesc do funkcji PlaySelectedStage
                     else if (Deployed->Selected_Stage->StageBackground == 1) bgImage = al_load_bitmap("Data/BG_cave.jpg");
                     else bgImage = al_load_bitmap("Data/BG_swamp.jpg");
                     PlaySelectedStage(Deployed);
-                    STATE = PLAYING;
+                    State.ChangeState(PLAYING);
 
                     al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
                         if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
@@ -383,21 +422,30 @@ int main(int argc, char **argv)
                             Creature *stageHero = new Creature(40, 0, hero);
                             ptr_to_hero = stageHero;
                             objects.push_back(stageHero);
+                            if (Deployed->Selected_Stage->StageEnemy == 0)
+                            {
                             Creature *enemyHero = new Creature(1560, 0, ogre);
                             ptr_to_enemy = enemyHero;
                             objects.push_back(enemyHero);
+                            }
+                            else
+                            {
+                            Creature *enemyHero = new Creature(1560, 0, necromancer);
+                            ptr_to_enemy = enemyHero;
+                            objects.push_back(enemyHero);
+                            }
                         }
                     break;
                 }
-                if (STATE == AFTERMATCH)
+                if (State.GetState() == AFTERMATCH)
                 {
                     Remove_objects(allObj);
-                    STATE = MENU;
+                    State.ChangeState(MENU);
                     delete Deployed;
                     Deployment *Deployed = new Deployment(soldier, barbarian, squire);
                     break;
                 }
-                if (STATE == PLAYING)
+                if (State.GetState() == PLAYING && State.GamePaused() == false)
                 {
                     int gold_cost = Deployed->GetSelectedSlot(unit_selected).GetGoldCost();
                     int honor_cost = Deployed->GetSelectedSlot(unit_selected).GetHonorCost();
@@ -444,25 +492,46 @@ int main(int argc, char **argv)
             if (cameraRight == true)
                 if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 6);
 
-            if(STATE == PLAYING)
+            if(State.GetState() == PLAYING && State.GamePaused() == false)
             {
             /*Enemy Spawning*/
-            if(rand() % 100 == 0)
+            if(rand() % (115 - Deployed->Selected_Stage->StageDiffaulty*10) == 0)
             {
                 if (rand() % 10 == 0 && Stage::GetRareNumber() < EnemyEliteCount)
                 {
+                    if (Deployed->Selected_Stage->StageEnemy == 0)
+                    {
                     Creature *troll = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, war_troll);
                     objects.push_back(troll);
+                    } else
+                    {
+                    Creature *undead_wraith = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, wraith);
+                    objects.push_back(undead_wraith);
+                    }
                 }
                 else if (rand() % 3 == 0 && Stage::GetUncommonNumber() < EnemyHeavyCount)
                 {
+                    if (Deployed->Selected_Stage->StageEnemy == 0)
+                    {
                     Creature *gnoll = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, gnoll_axeman);
                     objects.push_back(gnoll);
+                    } else
+                    {
+                    Creature *undead_ghoul = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, ghoul);
+                    objects.push_back(undead_ghoul);
+                    }
                 }
                 else
                 {
+                    if (Deployed->Selected_Stage->StageEnemy == 0)
+                    {
                     Creature *goblin = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, goblin_pillager);
                     objects.push_back(goblin);
+                    } else
+                    {
+                    Creature *undead_skeleton = new Creature(WORLD_WIDTH-20, rand() % 3 + 1, skeleton);
+                    objects.push_back(undead_skeleton);
+                    }
                 }
             }
 
@@ -510,11 +579,11 @@ int main(int argc, char **argv)
             //cull the dead
             Remove_objects(deadObj);
 
-            //jesli stracimy hp/zginie nam hero to konczymy gre - observer pattern
-            if (Stage::GetStageLives() < 1 || Stage::STAGE_VICTORY_CONDITION != SIEGE && (*ptr_to_hero).GetHp() < 1)
+            //jesli stracimy hp/zginie nam hero to konczymy gre
+            if (Stage::GetStageLives() < 1 || Stage::STAGE_VICTORY_CONDITION != SIEGE &&(*ptr_to_hero).GetHp() < 1)
             {
                 Stage::SetAftermatchStatus(DEFEAT);
-                STATE = AFTERMATCH;
+                State.ChangeState(AFTERMATCH);
                 Remove_objects(miscObj);//Usuwamy m.in floating text
                 al_stop_samples();
             }
@@ -538,7 +607,7 @@ int main(int argc, char **argv)
             if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)
             {
                 Stage::SetAftermatchStatus(VICTORY);
-                STATE = AFTERMATCH;
+                State.ChangeState(AFTERMATCH);
                 Remove_objects(miscObj);
                 al_stop_samples();
             }
@@ -549,12 +618,12 @@ int main(int argc, char **argv)
             if(render && al_is_event_queue_empty(event_queue))
             {
                 render = false;
-                if (STATE == MENU)
+                if (State.GetState() == MENU)
                 {
                     al_draw_bitmap(titleScreen, 0, 0, 0);
                     al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, HEIGHT/1.2, ALLEGRO_ALIGN_CENTRE, "Press spacebar to start");
                 }
-                if (STATE == DEPLOYMENT)
+                if (State.GetState() == DEPLOYMENT)
                 {
                     al_draw_filled_rectangle(0, 0, 800, 600, al_map_rgb(0,0,0));//tlo
                     /* STAGE SELECT AND DRAWING */
@@ -614,7 +683,7 @@ int main(int argc, char **argv)
                     al_draw_bitmap_region(unit_icon, 40*Deployed->OccupiedSlot_3->GetIconNumber(), 0,40, 40, 480,360, 0);
                     al_draw_textf(font12, al_map_rgb(255,255,255), 530, 360, 0, "%s", Deployed->OccupiedSlot_3->GetSquadName().c_str());
                 }
-                if (STATE == PLAYING || STATE == PAUSED || STATE == AFTERMATCH )
+                if (State.GetState() == PLAYING || State.GetState() == AFTERMATCH )
                 {
                     al_draw_bitmap_region(bgImage, 0+Stage::cameraX, 0, SCREEN_WIDTH, HEIGHT, 0, 0, 0);
                     al_draw_bitmap(uiImage, 0, 500, 0);
@@ -655,7 +724,7 @@ int main(int argc, char **argv)
                     /* Row Selected Cursor */
                     al_draw_textf(font12, al_map_rgb(255,255,255), 5, 410+row_selected*20, 0,"%i. lane>", row_selected);
                     /* UI text + small debug*/
-                    if (STATE == PAUSED)
+                    if (State.GamePaused() == true)
                     {
                         al_draw_text(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 30, ALLEGRO_ALIGN_CENTRE, "Game Paused");
                         //al_draw_textf(font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTRE, "Enemy Rare count: %i", Stage::GetRareNumber());
@@ -689,10 +758,10 @@ int main(int argc, char **argv)
                         al_draw_textf(font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero Hp: %i", (*ptr_to_hero).GetHp());
                     }
 
-                    if (STATE == PLAYING ) StageTimeElapsed++;
+                    if (State.GetState() == PLAYING && State.GamePaused() == false ) StageTimeElapsed++;
                     al_draw_textf(font18, al_map_rgb(255,255,255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTER, "%i:%i",(StageTimeElapsed/60/60),(StageTimeElapsed/60)%60);
                 }
-                if (STATE == AFTERMATCH)
+                if (State.GetState() == AFTERMATCH)
                 {
                     if(Stage::GetAftermachStatus() == DEFEAT)
                     {
@@ -735,6 +804,9 @@ int main(int argc, char **argv)
     al_destroy_bitmap(heroImage);
     al_destroy_bitmap(gnollImage);
     al_destroy_bitmap(skeletonImage);
+    al_destroy_bitmap(ghoulImage);
+    al_destroy_bitmap(wraithImage);
+    al_destroy_bitmap(necroImage);
     al_destroy_bitmap(bgImage);
     al_destroy_bitmap(uiImage);
     al_destroy_bitmap(titleScreen);
@@ -803,8 +875,6 @@ void Remove_objects(int remove_flag)
 void Stage_init() // Przeniesc jako metode do stage.h
 {
     StageTimeElapsed = 0;
-    Creature *ptr_to_hero = nullptr;
-    Creature *ptr_to_enemy = nullptr;
 }
 
 void PlaySelectedStage(Deployment * currently)

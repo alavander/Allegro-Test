@@ -1,10 +1,9 @@
 #pragma once
-#include "squad.h"
 #include "creature.h"
-#include "Const.h"
+#include "squad.h"
 #include "stage.h"
 #include <list>
-#include <iostream>
+
 
 class Deployment
 {
