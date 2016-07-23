@@ -6,7 +6,7 @@ const int HEIGHT = 600;
 const float LANE[] = {420,450,470,490};
 
 /* Enemies Count - max number of spawned uncommon and rare creatures*/
-const int EnemyHeavyCount = 6;
+const int EnemyHeavyCount = 5;
 const int EnemyEliteCount = 2;
 
 enum ID{PLAYER, ENEMY, MISC};

@@ -15,6 +15,7 @@ class Stage
         int StageEnemy;//0=greenskins,1=undeads
         int StageBackground;//0=forest,1=cave,2=swamp
         int StageDiffaulty;//0=easy,1=medium,2=hard
+        int StageExpReward;
         /* Stage Constructor */
         Stage(int diff); //constructor
         /* Lives related */

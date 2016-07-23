@@ -9,6 +9,7 @@
 #include <iterator>
 #include <string>
 #include <iostream>
+#include <fstream>
 /* Local Includes */
 #include "game_state.h"
 #include "objects.h"
@@ -25,9 +26,8 @@
 - Stage: Stage should have: background, objectives, enemy type, diffaulty, description, picture (75% done)
 - Stage: A stage should also have enemy types and enemy hero type
 - Stage: A stage should have stage traits
-- Cleaning currently selected stage when in menu screen(done)
 - Better menu screen
-- Pre-Gen stages should be of three different diffaulty: easy, medium, hard(done)
+
 - Stages should have stage level (on which we will base enemy stats)
 - Hero should be able to level up and spend skill points on skills, in separate window
 - Add talents(passive specials), which will be available directly from squad - a list, or array of talents, which will modify the way the game plays
@@ -53,13 +53,13 @@ Classes:
         Combat Class -> Melee Combat, Ranged Combat, Unit Special Skills Usage, Hp/Dam, Resists, Cooldowns (singleton)
         *GUI Class, -> Button, Selection Window, Information Window (singleton)
         Input Class, -> Forwarding Pressed Keys/Buttons/Selection Windows to GameState Class (singleton)
-      -=GameState Class, -> Playing(Paused - bool), Menu, Deploying, Aftermatch (done)=-
-        CombatStatus Class,-> Combat Buff, Debuff
+        CombatStatus Class,-> Combat Buff, Debuff (stats+/- to targets, damage/healing to targets, stun status)
         Message Class, -> Popup Windows
         *Handler Class, -> Keeping all the game lists together (singleton)
-        Player Class,-> Number of victories, Number of defeats, achivements/unlocks (singleton)
-                        using hero special abilities, hero leveling (singleton)
+        Player Class,-> Number of victories, Number of defeats, killed enemies, achivements/unlocks (singleton)
+        Hero Class, -> Covers the use of special abilities and hero leveling,
         Audio Class,-> Playing, Stopping sounds and music, audio options (singleton)
+        Data Class,-> For keeping squad, images, sounds and fonts data (tidying)
 
 Alpha-level ToDo:
 - Attack speed should be a separate variable, and based on it, animations should be faster or slower.
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
         return -1;
 
     display = al_create_display(SCREEN_WIDTH, HEIGHT);			//create our display object
-    al_set_window_title(display, "Undertales of Drakern");
+    al_set_window_title(display, "Tales of Drakern");
     al_hide_mouse_cursor(display);
 
     if(!display)										//test display object
@@ -204,63 +204,63 @@ int main(int argc, char **argv)
 //==============================================
 //SQUAD HANDLING
 //==============================================
-    stats soldier_stat = {9, 19, 1.95, 8, 0, "Footman", COMMON};
-    animation soldier_anim = {9, 6, 150, 150,9,12, soldierImage,1};
+    stats soldier_stat = {"Footman", 9, 19, 1.95, 8, 0, COMMON};
+    animation soldier_anim = {"Footman",9, 6, 150, 150,9,12, soldierImage,1};
     Squad *soldier = new Squad(DWARFKIN, soldier_stat, soldier_anim);
     AvailableSquads.push_back(soldier);
     /*============================================================================*/
-    stats barbarian_stat = {18, 28, 1.9, 20, 0, "Barbarian", UNCOMMON};//DMG/HP/SPD/COST/HONOR/SQUAD_NAME
-    animation barbarian_anim = {6,6,155,128,6,12,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
+    stats barbarian_stat = {"Barbarian",18, 28, 1.9, 20, 0,  UNCOMMON};//DMG/HP/SPD/COST/HONOR/SQUAD_NAME
+    animation barbarian_anim = {"Barbarian",6,6,155,128,6,12,barbarianImage, 2}; //maxFrames/FrameDelay/FrameWidth/FrameHeight/AnimationColumns/AttackDelay/IMG/ICON
     Squad *barbarian = new Squad(DWARFKIN, barbarian_stat, barbarian_anim);
     AvailableSquads.push_back(barbarian);
     /*============================================================================*/
-    stats hero_stat = {25, 250, 1, 10, 0, "Hero", LEGENDARY};
-    animation hero_anim = {11, 8, 250, 200, 11, 10, heroImage, 4};
+    stats hero_stat = {"Hero",25, 250, 1, 10, 0,  LEGENDARY};
+    animation hero_anim = {"Hero",11, 8, 250, 200, 11, 10, heroImage, 4};
     Squad *hero = new Squad(DWARFKIN, hero_stat, hero_anim);
     AvailableSquads.push_back(hero);
     /*============================================================================*/
-    stats squire_stat = {14, 74, 1.6, 30, 4, "Squire", RARE};
-    animation squire_anim = {7, 7, 200, 100, 7, 10, squireImage, 3};
+    stats squire_stat = {"Squire",14, 74, 1.6, 30, 4,  RARE};
+    animation squire_anim = {"Squire",7, 7, 200, 100, 7, 10, squireImage, 3};
     Squad *squire = new Squad(DWARFKIN, squire_stat, squire_anim);
     AvailableSquads.push_back(squire);
     /*============================================================================*/
-    stats goblin_stat = {5, 12, 3.64, 0, 0, "", COMMON};
-    animation goblin_anim = {4,6,125,100,4,15,goblinImage,0};
+    stats goblin_stat = {"",5, 12, 3.64, 0, 0,  COMMON};
+    animation goblin_anim = {"",4,6,125,100,4,15,goblinImage,0};
     Squad *goblin_pillager = new Squad(GREENSKINS, goblin_stat, goblin_anim);
     AvailableSquads.push_back(goblin_pillager);
     /*============================================================================*/
-    stats troll_stat = {20, 92, 1.2, 0, 0,"", RARE};
-    animation troll_anim = {8,6,250,200,8,15,trollImage,0};
+    stats troll_stat = {"",20, 92, 1.2, 0, 0, RARE};
+    animation troll_anim = {"",8,6,250,200,8,15,trollImage,0};
     Squad *war_troll = new Squad(GREENSKINS, troll_stat, troll_anim);
     AvailableSquads.push_back(war_troll);
     /*============================================================================*/
-    stats gnoll_stat = {17, 21, 1.9, 0, 0,"", UNCOMMON};
-    animation gnoll_anim = {8,5,220,175,8,12,gnollImage,0};
+    stats gnoll_stat = {"",17, 21, 1.9, 0, 0, UNCOMMON};
+    animation gnoll_anim = {"",8,5,220,175,8,12,gnollImage,0};
     Squad *gnoll_axeman = new Squad(GREENSKINS, gnoll_stat, gnoll_anim);
     AvailableSquads.push_back(gnoll_axeman);
     /*============================================================================*/
-    stats ogre_stat = {25, 250, 1, 0, 0,"", LEGENDARY};
-    animation ogre_anim = {8, 7, 250, 200, 8, 12, ogreImage, 0};
+    stats ogre_stat = {"",25, 250, 1, 0, 0, LEGENDARY};
+    animation ogre_anim = {"",8, 7, 250, 200, 8, 12, ogreImage, 0};
     Squad *ogre = new Squad(GREENSKINS, ogre_stat, ogre_anim);
     AvailableSquads.push_back(ogre);
     /*============================================================================*/
-    animation skel_anim = {7, 5, 150, 100, 7, 10, skeletonImage, 0};
-    stats skel_stat = {9, 8, 2.6, 0, 0, "", COMMON};
+    animation skel_anim = {"",7, 5, 150, 100, 7, 10, skeletonImage, 0};
+    stats skel_stat = {"",9, 8, 2.6, 0, 0,  COMMON};
     Squad *skeleton = new Squad(UNDEADS, skel_stat, skel_anim);
     AvailableSquads.push_back(skeleton);
     /*============================================================================*/
-    animation ghoul_anim = {6, 6, 140, 90, 6, 14, ghoulImage, 0};
-    stats ghoul_stat = {9, 32, 1.4, 0, 0, "", UNCOMMON};
+    animation ghoul_anim = {"",6, 6, 140, 90, 6, 14, ghoulImage, 0};
+    stats ghoul_stat = {"",9, 32, 1.4, 0, 0,  UNCOMMON};
     Squad *ghoul = new Squad(UNDEADS, ghoul_stat, ghoul_anim);
     AvailableSquads.push_back(ghoul);
     /*============================================================================*/
-    animation wraith_anim = {6, 7, 200, 130, 6, 12, wraithImage, 0};
-    stats wraith_stat = {19, 28, 3, 0, 0, "", RARE};
+    animation wraith_anim = {"",6, 7, 200, 130, 6, 12, wraithImage, 0};
+    stats wraith_stat = {"",19, 28, 3, 0, 0,  RARE};
     Squad *wraith = new Squad(UNDEADS, wraith_stat, wraith_anim);
     AvailableSquads.push_back(wraith);
     /*============================================================================*/
-    animation necro_anim = {6, 8, 176, 120, 6, 12, necroImage, 0};
-    stats necro_stats = {35, 195, 2, 0, 0, "", LEGENDARY};
+    animation necro_anim = {"",6, 8, 176, 120, 6, 12, necroImage, 0};
+    stats necro_stats = {"",35, 195, 2, 0, 0,  LEGENDARY};
     Squad *necromancer = new Squad(UNDEADS, necro_stats, necro_anim);
     AvailableSquads.push_back(necromancer);
     /*============================================================================*/
@@ -440,7 +440,10 @@ int main(int argc, char **argv)
                 if (State.GetState() == AFTERMATCH)
                 {
                     Remove_objects(allObj);
-                    State.ChangeState(MENU);
+                    State.ChangeState(DEPLOYMENT);
+                    Deployed->OccupiedSlot_1->SquadUpdate();
+                    Deployed->OccupiedSlot_2->SquadUpdate();
+                    Deployed->OccupiedSlot_3->SquadUpdate();
                     delete Deployed;
                     Deployment *Deployed = new Deployment(soldier, barbarian, squire);
                     break;
@@ -488,9 +491,9 @@ int main(int argc, char **argv)
 
             /*Camera*/
             if (cameraLeft == true)
-                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 6);
+                if (Stage::cameraX < 1 ? Stage::cameraX = 0 : Stage::cameraX -= 7);
             if (cameraRight == true)
-                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 6);
+                if (Stage::cameraX > 799 ? Stage::cameraX = 800 : Stage::cameraX += 7);
 
             if(State.GetState() == PLAYING && State.GamePaused() == false)
             {
@@ -607,6 +610,9 @@ int main(int argc, char **argv)
             if (Stage::CheckVictoryCondition(Stage::GetObjectivesCount()) == true)
             {
                 Stage::SetAftermatchStatus(VICTORY);
+                Deployed->OccupiedSlot_1->AwardSquadXP(Deployed->Selected_Stage->StageExpReward);
+                Deployed->OccupiedSlot_2->AwardSquadXP(Deployed->Selected_Stage->StageExpReward);
+                Deployed->OccupiedSlot_3->AwardSquadXP(Deployed->Selected_Stage->StageExpReward);
                 State.ChangeState(AFTERMATCH);
                 Remove_objects(miscObj);
                 al_stop_samples();
@@ -657,6 +663,8 @@ int main(int argc, char **argv)
                          al_draw_text(font18, al_map_rgb(250,250,130), 270, 510, 0, "Normal");
                     if(Deployed->Selected_Stage->StageDiffaulty == 2)
                          al_draw_text(font18, al_map_rgb(255,0,0), 270, 510, 0, "Hard" );
+                    al_draw_text(font18, al_map_rgb(255,255,255), 20, 540, 0, "Stage exp:" );
+                         al_draw_textf(font18, al_map_rgb(255,255,255), 270, 540, 0, "%i", Deployed->Selected_Stage->StageExpReward);
                     /* SQUAD SELECT AND DRAWING */
                     al_draw_text(font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
                     al_draw_text(font12, al_map_rgb(255,255,255), (460+750)/2, 25, ALLEGRO_ALIGN_CENTER, "(Press left/right to change)" );
@@ -664,7 +672,7 @@ int main(int argc, char **argv)
                     al_draw_text(font18, al_map_rgb(0,0,0), (600+750)/2, 505, ALLEGRO_ALIGN_CENTER, "Start Mission" );
                     al_draw_text(font12, al_map_rgb(255,255,255), 680, 535, ALLEGRO_ALIGN_CENTER, "(Press spacebar to start)" );
                     al_draw_textf(font18, al_map_rgb(255,255,255), 460, 50, 0, "Squad Name: %s",(*sqiter)->GetSquadName().c_str());
-                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 70, 0, "Level: %i (exp:%i)",(*sqiter)->GetLevel(),(int)(*sqiter)->GetSquadXP());
+                    al_draw_textf(font18, al_map_rgb(255,255,255), 460, 70, 0, "Level: %i (exp:%i/%i)",(*sqiter)->GetLevel(),(*sqiter)->GetSquadXP(),(*sqiter)->GetLevel()*250);
                     al_draw_textf(font18, al_map_rgb(255,255,255), 460, 90, 0, "ATK: %i",(*sqiter)->GetDamage());
                     al_draw_textf(font18, al_map_rgb(255,255,255), 460, 110, 0, "HP: %i",(*sqiter)->GetHp());
                     al_draw_textf(font18, al_map_rgb(255,255,255), 460, 130, 0, "SPEED: %f",(*sqiter)->GetSpeed());
@@ -765,13 +773,22 @@ int main(int argc, char **argv)
                 {
                     if(Stage::GetAftermachStatus() == DEFEAT)
                     {
-                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE, "You have been defeated!");
-                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press spacebar to restart!");
+                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2-30, ALLEGRO_ALIGN_CENTRE, "You have been defeated!");
+                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press spacebar to continue!");
                     }
                     if(Stage::GetAftermachStatus() == VICTORY)
                     {
-                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE, "You have proved victorious!");
-                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE, "Press spacebar to start next mission!");
+                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2-30, ALLEGRO_ALIGN_CENTRE, "You have proved victorious!");
+                    if(Deployed->OccupiedSlot_1->CheckLevel()== true)
+                        al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE," Your %s have leveled up!", Deployed->OccupiedSlot_1->GetSquadName().c_str());
+                    else al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2, ALLEGRO_ALIGN_CENTRE," %s have gained %i exp points.", Deployed->OccupiedSlot_1->GetSquadName().c_str(), Deployed->Selected_Stage->StageExpReward);
+                    if(Deployed->OccupiedSlot_2->CheckLevel()== true)
+                        al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE," Your %s have leveled up!", Deployed->OccupiedSlot_2->GetSquadName().c_str());
+                    else al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+30, ALLEGRO_ALIGN_CENTRE," %s have gained %i exp points.", Deployed->OccupiedSlot_2->GetSquadName().c_str(), Deployed->Selected_Stage->StageExpReward);
+                    if(Deployed->OccupiedSlot_3->CheckLevel()== true)
+                        al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+60, ALLEGRO_ALIGN_CENTRE," Your %s have leveled up!", Deployed->OccupiedSlot_3->GetSquadName().c_str());
+                    else al_draw_textf(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+60, ALLEGRO_ALIGN_CENTRE," %s have gained %i exp points.", Deployed->OccupiedSlot_3->GetSquadName().c_str(), Deployed->Selected_Stage->StageExpReward);
+                    al_draw_text(font18, al_map_rgb(255, 30, 30), SCREEN_WIDTH/2, HEIGHT/2+90, ALLEGRO_ALIGN_CENTRE, "Press spacebar to continue!");
                     }
                 }
                 //FLIP BUFFERS========================

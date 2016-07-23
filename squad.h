@@ -1,35 +1,13 @@
 #pragma once
 #include <allegro5/allegro5.h>
 #include <string>
-
-struct stats
-{
-    int damage;
-    int hp;
-    float speed;
-    int gold_cost;
-    int honor_cost;
-    std::string squad_name;
-    int UNIT_TYPE;
-};
-
-struct animation
-{
-	int maxFrame;
-	int frameDelay;
-	int frameWidth;
-	int frameHeight;
-	int animationColumns;
-	int attackDelay;
-	ALLEGRO_BITMAP *image;
-	int icon_number;
-};
+#include "data.h"
 
 class Squad
 {
     private:
         int level;                  //Poziom jednostki
-        float experience;           //Punkty doswiadczenia ktore ma jednostka
+        int experience;           //Punkty doswiadczenia ktore ma jednostka
         int gold_cost;              //Ile zlota kosztuje przywolanie jednej jednostki
         int honor_cost;
         int FRACTION;
@@ -59,10 +37,7 @@ class Squad
         stats *squad_stat; //Pointer do bazowych statow jednostki
         animation *squad_anim; //Pointer do IMG oraz informacji o animacji jednostki
         ALLEGRO_BITMAP *image;
-        //Setters:
-        void AwardSquadXP(int var) {experience += var;}
-        //Getters:
-        float GetSquadXP() {return experience;}
+        int GetSquadXP() {return experience;}
         float GetSpeed() {return speed;}
         int GetLevel() {return level;}
         int GetGoldCost() {return gold_cost;}
@@ -81,9 +56,15 @@ class Squad
         std::string GetSquadName() {return squad_name;}
         int GetDeploying() {return isDeploying;}
         void SetDeploying(int isDeploying) {Squad::isDeploying = isDeploying;}
-
+        void AddHp(int hp) {Squad::hp += hp;}
+        void AddGoldCost(int gold_cost) {Squad::gold_cost += gold_cost;}
+        void AddDamage(int damage) {Squad::damage += damage;}
+        void AwardSquadXP(int var) {experience += var;}
+        void SetSquadXP(int var) {experience = var;}
+        void AwardLevel() {level += 1;}
         //Other:
-        bool CheckLevel(); //Sprawdza, czy exp > exp potrzebny do nastepnego levelu i awarduje level.
+        bool CheckLevel();//sprawdzamy czy squad zdobyl odpowiednia ilosc xp by zdobyc level up
+        void SquadUpdate(); //Jezeli zdobedziemy level, to updatujemy staty naszego squadu
         void UpdateStats(); //Updatuje staty(zmiany eq lub level upy)
         int isDeploying; //Jesli jest isDeploying to znika z listy do deploy
 };

@@ -8,6 +8,7 @@ Stage::Stage(int diff)
          StageBackground = random_seed % 3;  //0=forest,1=cave,2=swamp
          StageDiffaulty = diff;   //0=easy,1=medium,2=hard
          StageName = GenerateStageName();
+         StageExpReward = ((rand()%31+50)*(10+StageDiffaulty*12))/10+StageEnemy*20+StageVictory*10;
 }
 
 std::string Stage::GenerateStageName()
