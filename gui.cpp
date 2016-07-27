@@ -1,13 +1,15 @@
 #include "gui.h"
 
-GUI::GUI(Deployment &deployment_, GameState &state_)
+GUI::GUI(GameState &state_, Data &data_)
 {
+    *state = state_;
+    *data = data_;
 }
 
-void GUI::DrawGUI(Deployment &deployment_, GameState &state_)
+void GUI::DrawGUI()
 {
-    int state = state_.GetState();
-    switch(state)
+    int current_state = state->GetState();
+    switch(current_state)
     {
         case MENU:
         DrawMenuScreen();
@@ -25,6 +27,8 @@ void GUI::DrawGUI(Deployment &deployment_, GameState &state_)
 
 void GUI::DrawMenuScreen()
 {
+    //al_draw_bitmap(data->titleScreen, 0, 0, 0);
+    //al_draw_text(data->font18, al_map_rgb(255, 255, 255), SCREEN_WIDTH/2, HEIGHT/1.2, ALLEGRO_ALIGN_CENTRE, "Press spacebar to start");
 };
 
 void GUI::DrawDeploymentScreen()

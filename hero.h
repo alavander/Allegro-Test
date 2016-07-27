@@ -20,3 +20,11 @@ Greenskins
 - Warcry - 20% Increase attack and speed of your units for 10 sec. +5% per level.
 - Blasting Powder - Turns 2 (+1 per level) goblins pernamently into Goblin Bomber, which upon death deals 20(+2/level)dmg to enemy.
 */
+
+class Hero
+{
+    private:
+
+    public:
+
+}

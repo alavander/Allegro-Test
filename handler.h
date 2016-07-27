@@ -1,4 +1,4 @@
-#pragma Once
+#pragma once
 #include <list>
 #include "objects.h"
 #include "squad.h"
@@ -19,7 +19,6 @@ class Handler
     list<GameObject *> objects;
     list<GameObject *>::iterator iter;
     list<GameObject *>::iterator iter2;
-
     list<Squad *> AvailableSquads;
     list<Squad *>::iterator sqiter;
-}
+};
