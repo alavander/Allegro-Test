@@ -4,6 +4,8 @@
 #include <string>
 #include "deployment.h"
 #include "game_state.h"
+#include "handler.h"
+#include "player.h"
 
 
 /*
@@ -16,13 +18,18 @@ class GUI
     private:
         GameState * state;
         Data * data;
+        Deployment *Deployed;
+        Handler *handler;
+        Player *player;
     public:
-        GUI(GameState &state_, Data &data_);
+        GUI(GameState *state, Data *data, Deployment *Deployed, Handler *handler, Player *player);
         void DrawGUI();// -> na to skladaja sie wszystkie inne funkcje DRAW z  renderingu, kazda linia i wszystko ogólnie:
         void DrawMenuScreen(); // if state = menu
         void DrawDeploymentScreen(); // if state = deployment
         void DrawBattleMap(); // if state = playing or aftermatch, Background/Foreground
         void DrawBattleGUI(); // if state = playing or aftermatch, GUI
+        int unit_selected;
+        int row_selected;
 };
 
 class Button

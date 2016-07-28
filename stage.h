@@ -1,5 +1,4 @@
 #pragma once
-#include "creature.h"
 #include <string>
 #include "Const.h"
 
@@ -48,6 +47,7 @@ class Stage
         static int AftermatchStatus;
         static int GetAftermachStatus() {return AftermatchStatus;}
         static void SetAftermatchStatus(int newStatus) {Stage::AftermatchStatus = newStatus;}
+        static int StageTimeElapsed;
 
         //Victory Condition-Related:
         static int STAGE_VICTORY_CONDITION; //Hero_hunting, bloodbath, siege

@@ -4,7 +4,6 @@
 #include "stage.h"
 #include <list>
 
-
 class Deployment
 {
     private:
@@ -18,4 +17,5 @@ class Deployment
         Squad GetSelectedSlot(int slot);//Aktualnie wybrany slot unita, do pobierania danych
         void SelectSquadForDeployment(Squad *selectedSquad, int slot);
         void PlaySelectedStage(Stage SelectedStage);
+        void GenerateStages();//tworzy trzy nowe mapy do wyboru
 };

@@ -21,4 +21,5 @@ class Handler
     list<GameObject *>::iterator iter2;
     list<Squad *> AvailableSquads;
     list<Squad *>::iterator sqiter;
+    void Remove_objects(int remove_flag);
 };
