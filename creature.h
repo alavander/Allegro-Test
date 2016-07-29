@@ -1,10 +1,7 @@
 #pragma once
 #include "objects.h"
-#include <allegro5/allegro_primitives.h>
 #include "stage.h"
 #include "squad.h"
-#include <iostream>
-
 
 class Creature : public GameObject
 {

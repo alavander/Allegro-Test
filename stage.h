@@ -3,7 +3,6 @@
 #include "Const.h"
 
 
-
 class Stage
 {
     public:

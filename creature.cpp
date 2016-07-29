@@ -2,7 +2,7 @@
 
 Creature::Creature(float x, float y, Squad *squad_name)
 {
-    Creature::ptr_to_squad = &*squad_name;
+    Creature::ptr_to_squad = squad_name;
     //Initializing and stats
 	GameObject::Init(x, y, squad_name->GetSpeed(), squad_name->GetFraction() == DWARFKIN ? 1 : -1 , 0, 0);
 	GameObject::SetID(squad_name->GetFraction() == DWARFKIN ? PLAYER : ENEMY);

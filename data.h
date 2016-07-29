@@ -3,9 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <allegro5/allegro5.h>
 #include <allegro5/allegro_ttf.h>
-
 using std::list;
 using std::string;
 
@@ -43,13 +41,13 @@ class Data
     public:
         Data();
         ~Data();
-        void LoadFromFiles();//Flaga Stats = do statsów, flaga anim = do anim.
+        void LoadFromFiles();
         stats GetStats(string name); //Wyszukuje na liscie stats statsów o konkretnym name +dodać name
         animation GetAnim(string name);//Wyszukuje na liscie anim animation o konkretnym name +dodać name
-        ALLEGRO_FONT *font18, *font12;
         //==============================================
-        //PROJECT VARIABLES
+        //ASSETS
         //==============================================
+            ALLEGRO_FONT *font18, *font12;
             ALLEGRO_BITMAP *soldierImage = NULL;
             ALLEGRO_BITMAP *barbarianImage = NULL;
             ALLEGRO_BITMAP *squireImage = NULL;

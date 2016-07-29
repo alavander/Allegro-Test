@@ -9,6 +9,8 @@ GUI::GUI(GameState *state, Data *data, Deployment *Deployed, Handler *handler, P
     GUI::player = player;
     row_selected = 1;
     unit_selected = 1;
+    cameraLeft = false;
+    cameraRight = false;
 }
 
 void GUI::DrawGUI()
@@ -76,10 +78,10 @@ al_draw_textf(data->font18, al_map_rgb(255,255,255), 270, 540, 0, "%i", Deployed
 al_draw_text(data->font18, al_map_rgb(255,255,255), (460+750)/2, 5, ALLEGRO_ALIGN_CENTER, "Squad Selection" );
 al_draw_text(data->font12, al_map_rgb(255,255,255), (460+750)/2, 25, ALLEGRO_ALIGN_CENTER, "(Press left/right to change)" );
 //al_draw_filled_rectangle(460, 530, 660, 560, al_map_rgb(255,255,255));//start button
-al_draw_text(data->font18, al_map_rgb(255,255,255), 450, 515, 0, "Options:" );
-al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 540, 0, "I.   Press spacebar to start" );
-al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 560, 0, "II.  Press esc to quit to menu" );
-al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 580, 0, "III. Press s to save game" );
+//al_draw_text(data->font18, al_map_rgb(255,255,255), 450, 515, 0, "Options:" );
+//al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 540, 0, "I.   Press spacebar to start" );
+//al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 560, 0, "II.  Press esc to quit to menu" );
+//al_draw_text(data->font12, al_map_rgb(255,255,255), 460, 580, 0, "III. Press s to save game" );
 al_draw_textf(data->font18, al_map_rgb(255,255,255), 460, 50, 0, "Squad Name: %s",(*handler->sqiter)->GetSquadName().c_str());
 if((*handler->sqiter)->GetLevel() == 10) al_draw_textf(data->font18, al_map_rgb(255,255,255), 460, 70, 0, "Level: %i (Max Level)",(*handler->sqiter)->GetLevel());
 else al_draw_textf(data->font18, al_map_rgb(255,255,255), 460, 70, 0, "Level: %i (exp:%i/%i)",(*handler->sqiter)->GetLevel(),(*handler->sqiter)->GetSquadXP(),(*handler->sqiter)->GetLevel()*250);
@@ -169,12 +171,12 @@ void GUI::DrawBattleGUI()
     if (Stage::STAGE_VICTORY_CONDITION == BLOODBATH)
     {
         al_draw_textf(data->font18, al_map_rgb(240,30,0), SCREEN_WIDTH/1.2, 10, ALLEGRO_ALIGN_CENTER, "Kills to win: %i", 50-(Stage::GetObjectivesCount()));
-        //al_draw_textf(data->font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero hp: %i", (*ptr_to_hero).GetHp());
+        al_draw_textf(data->font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero hp: %i", (*Deployed->ptr_to_hero).GetHp());
     }
     if (Stage::STAGE_VICTORY_CONDITION == HERO_HUNTING)
     {
-        //al_draw_textf(data->font18, al_map_rgb(255,255,255), 560, 10, 0, "Enemy Hero Hp: %i", (*ptr_to_enemy).GetHp());
-        //al_draw_textf(data->font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero Hp: %i", (*ptr_to_hero).GetHp());
+        al_draw_textf(data->font18, al_map_rgb(255,255,255), 560, 10, 0, "Enemy Hero Hp: %i", (*Deployed->ptr_to_enemy).GetHp());
+        al_draw_textf(data->font18, al_map_rgb(255,255,255), 5, 10, 0, "Hero Hp: %i", (*Deployed->ptr_to_hero).GetHp());
     }
     if (state->GetState() == PLAYING && state->GamePaused() == false ) Stage::StageTimeElapsed++;
         al_draw_textf(data->font18, al_map_rgb(255,255,255), SCREEN_WIDTH/2, 50, ALLEGRO_ALIGN_CENTER, "%i:%i",(Stage::StageTimeElapsed/60/60),(Stage::StageTimeElapsed/60)%60);

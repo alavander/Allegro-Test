@@ -1,5 +1,17 @@
 #include "stage.h"
 
+/* Starting Stage variables */
+int Stage::STAGE_VICTORY_CONDITION = HERO_HUNTING;
+int Stage::AftermatchStatus = UNRESOLVED;
+int Stage::lives = 5;
+int Stage::rareNumber = 0;
+int Stage::uncommonNumber = 0;
+int Stage::ObjectivesCount = 0;
+int Stage::cameraX = 0;
+int Stage::StageTimeElapsed = 0;
+float Stage::gold = 100;
+int Stage::honor = 0;
+
 Stage::Stage(int diff)
 {
          int random_seed = rand() % 100000;

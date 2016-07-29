@@ -44,3 +44,13 @@ void Handler::Remove_objects(int remove_flag)
     }
 }
 
+Squad * Handler::FindSquad(std::string name)
+{
+for(sqiter = AvailableSquads.begin(); sqiter != AvailableSquads.end(); ++sqiter)
+{
+    if((*sqiter)->GetSquadName() == name)
+    break;
+}
+    return *sqiter;
+}
+

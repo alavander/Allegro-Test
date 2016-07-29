@@ -17,6 +17,9 @@ Deployment::Deployment(Squad *slot1, Squad *slot2, Squad *slot3)
     Stage * stage3 = new Stage(2);
     Deployment::Pregen_Stage_3 = stage3;
     Selected_Stage = Deployment::Pregen_Stage_1;
+    //Ustawianie ptr na bohaterów na null
+    ptr_to_enemy = nullptr;
+    ptr_to_hero = nullptr;
 };
 
 Deployment::~Deployment()
@@ -97,4 +100,21 @@ void Deployment::SelectSquadForDeployment(Squad *selectedSquad, int slot)
     OccupiedSlot_3 = &*selectedSquad;
     break;
     }
+};
+
+void Deployment::PlaySelectedStage()
+{
+    /*Victory condition*/
+    if (Selected_Stage->StageVictory == 0) Stage::STAGE_VICTORY_CONDITION = HERO_HUNTING;
+    else if (Selected_Stage->StageVictory == 1) Stage::STAGE_VICTORY_CONDITION = BLOODBATH;
+    else Stage::STAGE_VICTORY_CONDITION = SIEGE;
+    Stage::gold = 100 - Selected_Stage->StageDiffaulty*10; //-10 gold for normal, -20 gold for hard
+    Stage::lives = 5 - Selected_Stage->StageDiffaulty;//-1 lives for normal, -2 lives for hard
+    Stage::rareNumber = 0;
+    Stage::uncommonNumber = 0;
+    Stage::ObjectivesCount = 0;
+    Stage::cameraX = 0;
+    Stage::honor = 0;
+    Stage::StageTimeElapsed = 0;
+    Stage::SetAftermatchStatus(UNRESOLVED);
 };
