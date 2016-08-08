@@ -8,7 +8,7 @@ Input::gui = gui;
 Input::handler = handler;
 };
 
-void Input::GetInput(ALLEGRO_EVENT *input)
+void Input::GetKeyboardInput(ALLEGRO_EVENT *input)
 {
             if (input->type == ALLEGRO_EVENT_KEY_DOWN)
             {
@@ -16,17 +16,13 @@ void Input::GetInput(ALLEGRO_EVENT *input)
                 {
                 case ALLEGRO_KEY_P:
                     {
-                    if (state->GetState() == PLAYING)
-                    {
-                    if (state->GamePaused() == true) state->SetPause(false);
-                    else state->SetPause(true);
-                    }
+                    TurnInputIntoCommand(0);
                     break;
                     }
                 case ALLEGRO_KEY_UP:
                     {
                     if (state->GetState() == PLAYING)
-                        if (gui->row_selected > 1) gui->row_selected -= 1;
+                        TurnInputIntoCommand(3);
                     if (state->GetState() == DEPLOYMENT)
                     {
                         if (deployed->Selected_Stage == deployed->Pregen_Stage_1) deployed->Selected_Stage = deployed->Pregen_Stage_2;
@@ -37,7 +33,7 @@ void Input::GetInput(ALLEGRO_EVENT *input)
                 case ALLEGRO_KEY_DOWN:
                     {
                     if (state->GetState() == PLAYING)
-                        if (gui->row_selected < 3 ) gui->row_selected += 1;
+                        TurnInputIntoCommand(4);
                     if (state->GetState() == DEPLOYMENT)
                     {
                         if (deployed->Selected_Stage == deployed->Pregen_Stage_3) deployed->Selected_Stage = deployed->Pregen_Stage_2;
@@ -48,31 +44,13 @@ void Input::GetInput(ALLEGRO_EVENT *input)
                 case ALLEGRO_KEY_LEFT:
                     {
                     if (state->GetState() == PLAYING || state->GetState() == AFTERMATCH) gui->cameraLeft = true;
-                    if (state->GetState() == DEPLOYMENT)//wybor squada podczas deploymentu
-                    {
-                        if (handler->sqiter == handler->AvailableSquads.begin()) handler->sqiter = std::prev(std::prev(handler->AvailableSquads.end()));
-                        else handler->sqiter--;
-                        while ((*handler->sqiter)->GetFraction() != DWARFKIN || (*handler->sqiter)->GetUnitType() == LEGENDARY)
-                        {
-                            if(handler->sqiter == handler->AvailableSquads.begin()) handler->sqiter = std::prev(std::prev(handler->AvailableSquads.end()));
-                            else handler->sqiter--;
-                        }
-                    }
+                    if (state->GetState() == DEPLOYMENT) TurnInputIntoCommand(1);
                     break;
                     }
                 case ALLEGRO_KEY_RIGHT:
                     {
                     if (state->GetState() == PLAYING || state->GetState() == AFTERMATCH) gui->cameraRight = true;
-                    if (state->GetState() == DEPLOYMENT)//Wybor squada podczas deploymentu
-                    {
-                        if (handler->sqiter == std::prev(std::prev(handler->AvailableSquads.end()))) handler->sqiter = handler->AvailableSquads.begin();
-                        else handler->sqiter++;
-                        while ((*handler->sqiter)->GetFraction() != DWARFKIN || (*handler->sqiter)->GetUnitType() == LEGENDARY)
-                        {
-                            if(handler->sqiter == std::prev(std::prev(handler->AvailableSquads.end()))) handler->sqiter = handler->AvailableSquads.begin();
-                            else handler->sqiter++;
-                        }
-                    }
+                    if (state->GetState() == DEPLOYMENT) TurnInputIntoCommand(2);
                     break;
                     }
                 case ALLEGRO_KEY_1:
@@ -206,4 +184,38 @@ void Input::GetInput(ALLEGRO_EVENT *input)
                         break;
                     }
                 }
+}
+
+void Input::GetMouseClick(int x, int y)
+{
+    if (state->GetState() == MENU ) state->ChangeState(DEPLOYMENT);
+        for(handler->gui_iter = handler->buttons.begin(); handler->gui_iter != handler->buttons.end(); ++handler->gui_iter)
+            {
+                if ( !(*handler->gui_iter)->IsActive()) continue;
+                {
+                    if ((*handler->gui_iter)->ClickWithinButton(x, y) == true)
+                    TurnInputIntoCommand((*handler->gui_iter)->BUTTON_COMMAND);
+                }
+            }
+}
+
+void Input::TurnInputIntoCommand(int command)
+{
+    switch (command)
+    {
+        case 0://Toggle pause or unpause
+        state->Pause();
+        break;
+        case 1://Deployment - Change Squad to the left
+        gui->Deployment_ChangeSelectedSquad(-1);
+        break;
+        case 2://Deployment - Change Squad to the right
+        gui->Deployment_ChangeSelectedSquad(1);
+        case 3:
+        gui->Battle_ChangeRow(-1);
+        break;
+        case 4:
+        gui->Battle_ChangeRow(1);
+        break;
+    }
 }

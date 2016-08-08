@@ -6,7 +6,6 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 #include <list>
-#include <iterator>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -70,7 +69,7 @@ Alpha-level ToDo:
 //==============================================
 //GLOBALS
 //==============================================
-/* GUI variables */
+/* GUI variables */ //AWAY WITH THIS SHIT!
 bool sound_enabled = true;
 
 int main(int argc, char **argv)
@@ -95,7 +94,6 @@ int main(int argc, char **argv)
 
     display = al_create_display(SCREEN_WIDTH, HEIGHT);			//create our display object
     al_set_window_title(display, "Tales of Drakern");
-    al_hide_mouse_cursor(display);
 
     if(!display)										//test display object
         return -1;
@@ -103,6 +101,7 @@ int main(int argc, char **argv)
 //ADDON INSTALL
 //==============================================
     al_install_keyboard();
+    al_install_mouse();
     al_init_image_addon();
     al_init_font_addon();
     al_init_ttf_addon();
@@ -203,6 +202,7 @@ int main(int argc, char **argv)
     timer = al_create_timer(1.0 / 60);
     al_register_event_source(event_queue, al_get_timer_event_source(timer));
     al_register_event_source(event_queue, al_get_keyboard_event_source());
+    al_register_event_source(event_queue, al_get_mouse_event_source());
     al_start_timer(timer);
     while(!done)
     {
@@ -221,7 +221,11 @@ int main(int argc, char **argv)
                 else {
                     sound_enabled = true;
                     al_play_sample(song, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);}}
-            else input.GetInput(&ev);
+            else input.GetKeyboardInput(&ev);
+        }
+        else if (ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)
+        {
+            input.GetMouseClick(ev.mouse.x, ev.mouse.y);
         }
         //==============================================
         //GAME UPDATE
@@ -385,6 +389,14 @@ int main(int argc, char **argv)
                         (*handler.iter)->Render();
                     }
                 }
+                if (State.GetState() == DEPLOYMENT)//Buttons! :D
+                {
+                    for(handler.gui_iter = handler.buttons.begin(); handler.gui_iter != handler.buttons.end(); ++handler.gui_iter)
+                    {
+                        if ((*handler.gui_iter)->IsActive() == false) continue;
+                        (*handler.gui_iter)->DrawButton();
+                    }
+                }
                 //FLIP BUFFERS========================
                 al_flip_display();
                 al_clear_to_color(al_map_rgb(0,0,0));
@@ -405,6 +417,12 @@ int main(int argc, char **argv)
     {
         delete (*handler.sqiter);
         handler.sqiter = handler.AvailableSquads.erase(handler.sqiter);
+    }
+
+    for(handler.gui_iter = handler.buttons.begin(); handler.gui_iter != handler.buttons.end(); )
+    {
+        delete (*handler.gui_iter);
+        handler.gui_iter = handler.buttons.erase(handler.gui_iter);
     }
     //SHELL objects=================================
     al_destroy_timer(timer);

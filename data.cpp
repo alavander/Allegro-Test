@@ -6,6 +6,8 @@ Data::Data()
     font18 = al_load_font("Data/dwarf.ttf", 18, 0);
     font12 = al_load_ttf_font("Data/dwarf.ttf", 12, 0);
     /*GUI*/
+    buttonArrow = al_load_bitmap("Data/ArrowButtonHorizontal.png");
+    buttonSmall = al_load_bitmap("Data/button_small.png");
     bgImage = al_load_bitmap("Data/BG_forest.jpg");
     uiImage = al_load_bitmap("Data/background2.jpg");
     titleScreen = al_load_bitmap("Data/title_screen.png");
@@ -52,6 +54,8 @@ Data::~Data()
     al_destroy_bitmap(icons);
     al_destroy_bitmap(unit_icon);
     al_destroy_bitmap(deployment_map);
+    al_destroy_bitmap(buttonSmall);
+    al_destroy_bitmap(buttonArrow);
 }
 
 void Data::LoadFromFiles() // Factory Pattern Challange

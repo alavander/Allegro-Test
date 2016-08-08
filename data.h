@@ -67,4 +67,6 @@ class Data
             ALLEGRO_BITMAP *icons = NULL;
             ALLEGRO_BITMAP *unit_icon = NULL;
             ALLEGRO_BITMAP *deployment_map = NULL;
+            ALLEGRO_BITMAP *buttonSmall = NULL;
+            ALLEGRO_BITMAP *buttonArrow = NULL;
 };

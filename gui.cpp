@@ -11,6 +11,11 @@ GUI::GUI(GameState *state, Data *data, Deployment *Deployed, Handler *handler, P
     unit_selected = 1;
     cameraLeft = false;
     cameraRight = false;
+    /*Initializing and putting all the buttons inside a list*/
+    Button *Squad_Selection_Left = new Button(1, 0, 1.5, false, 460, 0, "", data->buttonArrow);
+    handler->buttons.push_back(Squad_Selection_Left);
+    Button *Squad_Selection_Right = new Button(2, 0, 1.5, true, 715, 0, "", data->buttonArrow);
+    handler->buttons.push_back(Squad_Selection_Right);
 }
 
 void GUI::DrawGUI()
@@ -203,3 +208,33 @@ void GUI::DrawBattleGUI()
         }
     }
 };
+
+void GUI::Battle_ChangeRow(int input)
+{
+if (row_selected > 1 && input < 0) row_selected -= 1;
+else if (row_selected < 3 && input > 0) row_selected += 1;
+};
+
+void GUI::Deployment_ChangeSelectedSquad(int input)
+{
+    if (input == -1)
+            {
+                if (handler->sqiter == handler->AvailableSquads.begin()) handler->sqiter = std::prev(std::prev(handler->AvailableSquads.end()));
+                else handler->sqiter--;
+                while ((*handler->sqiter)->GetFraction() != DWARFKIN || (*handler->sqiter)->GetUnitType() == LEGENDARY)
+                {
+                    if(handler->sqiter == handler->AvailableSquads.begin()) handler->sqiter = std::prev(std::prev(handler->AvailableSquads.end()));
+                    else handler->sqiter--;
+                }
+            }
+    else if (input == 1)
+            {
+                if (handler->sqiter == std::prev(std::prev(handler->AvailableSquads.end()))) handler->sqiter = handler->AvailableSquads.begin();
+                else handler->sqiter++;
+                while ((*handler->sqiter)->GetFraction() != DWARFKIN || (*handler->sqiter)->GetUnitType() == LEGENDARY)
+                {
+                    if(handler->sqiter == std::prev(std::prev(handler->AvailableSquads.end()))) handler->sqiter = handler->AvailableSquads.begin();
+                    else handler->sqiter++;
+                }
+            }
+}

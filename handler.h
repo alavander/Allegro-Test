@@ -2,6 +2,7 @@
 #include <list>
 #include "objects.h"
 #include "squad.h"
+#include "button.h"
 
 using std::list;
 /*
@@ -17,6 +18,8 @@ class Handler
     list<GameObject *>::iterator iter2;
     list<Squad *> AvailableSquads;
     list<Squad *>::iterator sqiter;
+    list<Button *> buttons;
+    list<Button *>::iterator gui_iter;
     void Remove_objects(int remove_flag); //kasuje obiekty o okreslonej fladze: allObj, miscObj, deadObj
     Squad * FindSquad(std::string name); //wyszukuje squad po nazwie i zwraca go
 };

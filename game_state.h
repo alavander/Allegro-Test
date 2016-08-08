@@ -13,4 +13,6 @@ class GameState
         int  GetState()             {return GSTATE;}
         bool GamePaused()           {return paused;}
         void SetPause(bool paused)  {GameState::paused = paused;}
+        /* Input */
+        void Pause();
 };

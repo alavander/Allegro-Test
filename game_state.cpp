@@ -12,3 +12,11 @@ void GameState::ChangeState(int newState)
     GSTATE = newState;
 }
 
+void GameState::Pause()
+{
+    if (GetState() == PLAYING)
+    {
+    if (GamePaused() == true) SetPause(false);
+    else SetPause(true);
+    }
+}
